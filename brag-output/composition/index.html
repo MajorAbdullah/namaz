@@ -1,0 +1,1178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Namaz — brag video</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #060a1f;
+      }
+      :root {
+        /* Headlines. The app has no display face; this one ships with macOS. */
+        --serif: "Iowan Old Style", serif;
+        /* The app draws its interface in the system font. */
+        --ui: system-ui, sans-serif;
+        --asr: #ffc46b;
+        --maghrib: #ff8a4c;
+        --isha: #8fb2ff;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: var(--ui);
+        color: #fff;
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* ---------- Sky: the app's SkyTheme colours, used as the desktop ---------- */
+      #sky,
+      .sky,
+      .glow,
+      #scrim,
+      #grain,
+      #stars {
+        position: absolute;
+        inset: 0;
+      }
+      .sky-asr {
+        background: linear-gradient(180deg, #29487a 0%, #7a5870 50%, #b86c39 100%);
+      }
+      .sky-maghrib {
+        background: linear-gradient(180deg, #21184d 0%, #6c2b69 50%, #c4523f 100%);
+        opacity: 0;
+      }
+      .sky-isha {
+        background: linear-gradient(180deg, #060a1f 0%, #0f1b3e 50%, #1c2c58 100%);
+        opacity: 0;
+      }
+      .sky {
+        overflow: hidden;
+      }
+      /* Larger than the frame, so a glow can swell without its edge coming into view. */
+      .glow {
+        inset: auto;
+        left: -480px;
+        top: -270px;
+        width: 2880px;
+        height: 1620px;
+      }
+      #glow-asr {
+        background: radial-gradient(circle 1056px at 2496px 918px, rgba(255, 196, 107, 0.5), rgba(255, 196, 107, 0));
+        transform-origin: 2496px 918px;
+      }
+      #glow-maghrib {
+        background: radial-gradient(circle 1056px at 672px 1512px, rgba(255, 138, 76, 0.5), rgba(255, 138, 76, 0));
+        transform-origin: 672px 1512px;
+        opacity: 0.5;
+      }
+      #glow-isha {
+        background: radial-gradient(circle 1056px at 2208px 270px, rgba(143, 178, 255, 0.5), rgba(143, 178, 255, 0));
+        transform-origin: 2208px 270px;
+        opacity: 0.6;
+      }
+      #stars {
+        opacity: 0;
+      }
+      .star {
+        position: absolute;
+        border-radius: 50%;
+        background: #fff;
+      }
+      /* Keeps white headlines readable over the bright end of each sky. */
+      #scrim {
+        background: radial-gradient(ellipse 1500px 640px at 24% 74%, rgba(14, 10, 38, 0.46), rgba(14, 10, 38, 0));
+      }
+      #grain {
+        background: url("assets/img/grain.png");
+        mix-blend-mode: overlay;
+        opacity: 0.16;
+      }
+
+      /* ---------- Desktop: menu bar, island, pointer ---------- */
+      #desk {
+        z-index: 2;
+      }
+      #desk-inner {
+        position: absolute;
+        inset: 0;
+      }
+      #menubar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 96px;
+        background: rgba(8, 8, 24, 0.22);
+        font-size: 30px;
+        font-weight: 500;
+      }
+      .menu-left {
+        position: absolute;
+        left: 48px;
+        top: 0;
+        height: 96px;
+        display: flex;
+        align-items: center;
+        gap: 38px;
+      }
+      .menu-left b {
+        font-weight: 700;
+      }
+      .status {
+        position: absolute;
+        right: 48px;
+        top: 0;
+        height: 96px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .status svg {
+        width: 40px;
+        height: 40px;
+      }
+      #status-b {
+        opacity: 0;
+      }
+
+      #island {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        width: 555px;
+        height: 96px;
+        background: #000;
+        border-radius: 0 0 30px 30px;
+        overflow: hidden;
+      }
+      #bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 96px;
+        font-size: 37.5px;
+        font-weight: 600;
+        opacity: 0;
+      }
+      .bar-left {
+        position: absolute;
+        left: 42px;
+        top: 0;
+        height: 96px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+      .bar-icon {
+        position: relative;
+        width: 46px;
+        height: 46px;
+        color: var(--asr);
+      }
+      .bar-icon svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 46px;
+      }
+      #ico-sunset {
+        width: 46px;
+      }
+      #ico-bell {
+        width: 69px;
+        left: -12px;
+        opacity: 0;
+      }
+      .bar-right {
+        position: absolute;
+        right: 42px;
+        top: 0;
+        width: 160px;
+        height: 96px;
+        font-variant-numeric: tabular-nums;
+      }
+      .bar-right span {
+        position: absolute;
+        right: 0;
+        top: 0;
+        line-height: 96px;
+        opacity: 0;
+      }
+      .bar-right #c4 {
+        opacity: 1;
+      }
+
+      #details {
+        position: absolute;
+        top: 96px;
+        left: 50%;
+        margin-left: -600px;
+        width: 1200px;
+        height: 432px;
+        opacity: 0;
+      }
+      #head-up,
+      #head-ring {
+        position: absolute;
+        top: 24px;
+        left: 42px;
+        right: 42px;
+      }
+      .cap-row {
+        display: flex;
+        justify-content: space-between;
+        height: 42px;
+        line-height: 42px;
+        font-size: 34.5px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.68);
+        white-space: nowrap;
+      }
+      .prog {
+        margin-top: 24px;
+        height: 12px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+      }
+      #prog-fill {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 6px;
+        background: var(--asr);
+        transform-origin: 0 50%;
+      }
+      #head-ring {
+        height: 114px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        opacity: 0;
+      }
+      .ring-title {
+        font-size: 66px;
+        font-weight: 700;
+        line-height: 70px;
+        letter-spacing: -0.01em;
+      }
+      .ring-cap {
+        margin-top: 2px;
+        font-size: 34.5px;
+        font-weight: 500;
+        line-height: 42px;
+        color: rgba(255, 255, 255, 0.68);
+        white-space: nowrap;
+      }
+      #stop {
+        padding: 19px 48px;
+        border-radius: 60px;
+        background: #fff;
+        color: #16184a;
+        font-size: 39px;
+        font-weight: 600;
+        line-height: 48px;
+      }
+      #strip {
+        position: absolute;
+        top: 132px;
+        left: 42px;
+        right: 42px;
+        height: 222px;
+        padding: 12px;
+        border-radius: 45px;
+        background: rgba(255, 255, 255, 0.08);
+        display: flex;
+        gap: 6px;
+      }
+      .col {
+        position: relative;
+        flex: 1;
+        border-radius: 33px;
+      }
+      .col .fill,
+      .col .ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 33px;
+        opacity: 0;
+      }
+      .col .fill {
+        background: rgba(255, 255, 255, 0.22);
+      }
+      .col .ring {
+        border: 3px solid rgba(255, 255, 255, 0.32);
+      }
+      .col-in {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+      }
+      .col-in svg {
+        width: 46px;
+        height: 46px;
+      }
+      .col-in .t {
+        font-size: 31.5px;
+        font-weight: 500;
+        line-height: 38px;
+      }
+      .col-in .v {
+        font-size: 39px;
+        font-weight: 600;
+        line-height: 46px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      #cursor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 54px;
+        height: 63px;
+        opacity: 0;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+      }
+
+      /* ---------- Headline layers ---------- */
+      .copy {
+        position: absolute;
+        left: 140px;
+        right: 140px;
+      }
+      .kicker {
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        line-height: 36px;
+        margin-bottom: 18px;
+      }
+      .serif {
+        font-family: var(--serif);
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+        text-shadow: 0 2px 36px rgba(14, 10, 38, 0.45);
+      }
+      .line {
+        display: block;
+        overflow: hidden;
+        padding: 0.04em 0.1em 0.16em 0;
+      }
+      .line > span {
+        display: block;
+      }
+      .sub {
+        font-size: 40px;
+        font-weight: 500;
+        line-height: 52px;
+      }
+      #s1,
+      #s2,
+      #s3 {
+        z-index: 3;
+      }
+      #s1-wrap {
+        top: 590px;
+        font-size: 124px;
+      }
+      #s2-wrap {
+        top: 620px;
+        font-size: 104px;
+      }
+      #s3-wrap {
+        top: 628px;
+        font-size: 124px;
+      }
+      #s3-sub {
+        margin-top: 10px;
+        opacity: 0;
+      }
+      #s2-kicker,
+      #s3-kicker {
+        opacity: 0;
+      }
+
+      /* ---------- Scene 4: the desktop card ---------- */
+      #s4 {
+        z-index: 5;
+      }
+      #s4-bg {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        background: #0a0c20;
+      }
+      .bgsky {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+      }
+      #s4-dim {
+        position: absolute;
+        inset: 0;
+        background: rgba(6, 8, 26, 0.58);
+      }
+      #s4-content {
+        position: absolute;
+        inset: 0;
+      }
+      #s4-copy {
+        position: absolute;
+        left: 130px;
+        top: 318px;
+        width: 780px;
+        font-size: 100px;
+      }
+      #s4-kicker,
+      #s4-sub {
+        opacity: 0;
+      }
+      #s4-sub {
+        margin-top: 22px;
+      }
+      #card-wrap {
+        position: absolute;
+        left: 926px;
+        top: 236px;
+        width: 874px;
+        height: 507px;
+        opacity: 0;
+      }
+      #card-stack {
+        position: absolute;
+        inset: 0;
+        border-radius: 58px;
+        overflow: hidden;
+        box-shadow: 0 44px 100px rgba(0, 0, 0, 0.5);
+      }
+      #card-edge {
+        position: absolute;
+        inset: 0;
+        border-radius: 58px;
+        border: 2.5px solid rgba(255, 255, 255, 0.18);
+      }
+      .card {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+      }
+      .card:first-child {
+        opacity: 1;
+      }
+      .card .cbg,
+      .card .cglow,
+      .card .cstars {
+        position: absolute;
+        inset: 0;
+      }
+      .card .cin {
+        position: absolute;
+        inset: 0;
+        padding: 38px;
+      }
+      .c-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 34px;
+        font-size: 29px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .c-head .place {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .c-head svg {
+        width: 22px;
+        height: 22px;
+      }
+      .c-title {
+        margin-top: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        height: 84px;
+        line-height: 84px;
+        font-size: 77px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .c-cap {
+        margin-top: 5px;
+        display: flex;
+        justify-content: space-between;
+        height: 36px;
+        line-height: 36px;
+        font-size: 29px;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      .c-prog {
+        margin-top: 24px;
+        height: 10px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.22);
+        overflow: hidden;
+      }
+      .c-prog i {
+        display: block;
+        height: 100%;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.92);
+      }
+      .c-strip {
+        margin-top: 29px;
+        height: 185px;
+        padding: 10px;
+        border-radius: 36px;
+        background: rgba(0, 0, 0, 0.2);
+        display: flex;
+        gap: 5px;
+      }
+      .c-col {
+        flex: 1;
+        border-radius: 26px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+      }
+      .c-col svg {
+        width: 38px;
+        height: 38px;
+      }
+      .c-col .t {
+        font-size: 25px;
+        font-weight: 500;
+        line-height: 31px;
+      }
+      .c-col .v {
+        font-size: 31px;
+        font-weight: 600;
+        line-height: 38px;
+        font-variant-numeric: tabular-nums;
+      }
+      .c-col.next {
+        background: rgba(255, 255, 255, 0.22);
+      }
+      .c-col.cur {
+        box-shadow: inset 0 0 0 2.5px rgba(255, 255, 255, 0.34);
+      }
+      .c-col.past {
+        color: rgba(255, 255, 255, 0.7);
+      }
+      #periods {
+        position: absolute;
+        left: 926px;
+        top: 792px;
+        width: 874px;
+        height: 80px;
+        opacity: 0;
+      }
+      #periods .rail {
+        position: absolute;
+        left: 72px;
+        right: 72px;
+        top: 9px;
+        height: 3px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.28);
+      }
+      #pdot {
+        position: absolute;
+        left: 62px;
+        top: 0;
+        width: 21px;
+        height: 21px;
+        border-radius: 50%;
+        background: #fff;
+      }
+      #periods .labels {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 34px;
+        display: flex;
+      }
+      #periods .labels span {
+        flex: 1;
+        text-align: center;
+        font-size: 26px;
+        font-weight: 600;
+        line-height: 34px;
+        color: rgba(255, 255, 255, 0.62);
+      }
+
+      /* ---------- Scene 5: outro ---------- */
+      #s5 {
+        z-index: 6;
+      }
+      #s5-lock {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 322px;
+        height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 56px;
+      }
+      #s5-icon {
+        width: 400px;
+        height: 400px;
+        opacity: 0;
+      }
+      #s5-text {
+        width: 1040px;
+        white-space: nowrap;
+      }
+      #s5-name {
+        font-size: 196px;
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+      #s5-tag {
+        margin-top: 4px;
+        font-size: 48px;
+        font-weight: 500;
+        line-height: 60px;
+        opacity: 0;
+      }
+      #s5-link {
+        margin-top: 18px;
+        font-size: 34px;
+        font-weight: 500;
+        line-height: 44px;
+        color: #c9d8ff;
+        opacity: 0;
+      }
+      #s5-credit {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 64px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: 500;
+        line-height: 32px;
+        color: rgba(255, 255, 255, 0.72);
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Stand-ins for the SF Symbols the app uses for each prayer. -->
+    <svg width="0" height="0" style="position: absolute">
+      <defs>
+        <symbol id="i-fajr" viewBox="0 0 24 24">
+          <path d="M6.2 13.5a5.8 5.8 0 0 1 11.6 0z" fill="currentColor" />
+          <path
+            d="M2.5 16.6h19M7 20.2h10M12 2.8v2.2M4.9 6.4l1.6 1.6M19.1 6.4l-1.6 1.6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            fill="none"
+          />
+        </symbol>
+        <symbol id="i-sunrise" viewBox="0 0 24 24">
+          <path d="M6.5 16.4a5.5 5.5 0 0 1 11 0z" fill="currentColor" />
+          <path
+            d="M2.5 19.8h19M12 8.4V2.8M9.5 5.3 12 2.8l2.5 2.5"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            fill="none"
+          />
+        </symbol>
+        <symbol id="i-dhuhr" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4.6" fill="currentColor" />
+          <path
+            d="M12 2.2v2.6M12 19.2v2.6M2.2 12h2.6M19.2 12h2.6M5.07 5.07l1.84 1.84M17.09 17.09l1.84 1.84M5.07 18.93l1.84-1.84M17.09 6.91l1.84-1.84"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            fill="none"
+          />
+        </symbol>
+        <symbol id="i-asr" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4.2" fill="currentColor" />
+          <g fill="currentColor">
+            <circle cx="12" cy="3.8" r="1.1" />
+            <circle cx="12" cy="20.2" r="1.1" />
+            <circle cx="3.8" cy="12" r="1.1" />
+            <circle cx="20.2" cy="12" r="1.1" />
+            <circle cx="6.2" cy="6.2" r="1.1" />
+            <circle cx="17.8" cy="6.2" r="1.1" />
+            <circle cx="6.2" cy="17.8" r="1.1" />
+            <circle cx="17.8" cy="17.8" r="1.1" />
+          </g>
+        </symbol>
+        <symbol id="i-maghrib" viewBox="0 0 24 24">
+          <path d="M6.5 16.4a5.5 5.5 0 0 1 11 0z" fill="currentColor" />
+          <path
+            d="M2.5 19.8h19M12 2.8v5.6M9.5 5.9 12 8.4l2.5-2.5"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            fill="none"
+          />
+        </symbol>
+        <symbol id="i-isha" viewBox="0 0 24 24">
+          <path d="M12.6 4.6A8.2 8.2 0 1 0 19.6 16 6.8 6.8 0 0 1 12.6 4.6z" fill="currentColor" />
+          <path
+            d="M18.4 3.2l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8zM21.2 10.2l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z"
+            fill="currentColor"
+          />
+        </symbol>
+        <symbol id="i-bell" viewBox="0 0 36 24">
+          <path
+            d="M18 3.2c-3 0-5.2 2.3-5.2 5.4v3.2c0 1.2-.5 2.2-1.4 3.1-.5.5-.2 1.4.6 1.4h12c.8 0 1.1-.9.6-1.4-.9-.9-1.4-1.9-1.4-3.1V8.6c0-3.1-2.2-5.4-5.2-5.4zM16 17.8a2 2 0 0 0 4 0z"
+            fill="currentColor"
+          />
+        </symbol>
+        <symbol id="i-place" viewBox="0 0 24 24">
+          <path d="M21 3 3 10.6l7.6 2.8L13.4 21z" fill="currentColor" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="24.8"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="sky">
+        <div class="sky sky-asr"><div class="glow" id="glow-asr"></div></div>
+        <div class="sky sky-maghrib" id="sky-maghrib"><div class="glow" id="glow-maghrib"></div></div>
+        <div class="sky sky-isha" id="sky-isha">
+          <div class="glow" id="glow-isha"></div>
+          <div id="stars"></div>
+        </div>
+        <div id="scrim"></div>
+        <div id="grain"></div>
+      </div>
+
+      <!-- The desktop: menu bar, the island at the notch, the pointer. -->
+      <div id="desk" class="clip" data-start="0" data-duration="13.2" data-track-index="1">
+        <div id="desk-inner">
+          <div id="menubar">
+            <div class="menu-left"><b>Finder</b><span>File</span><span>Edit</span></div>
+            <div class="status" id="status-a">
+              <svg><use href="#i-maghrib" /></svg><span>Maghrib 6:15 PM</span>
+            </div>
+            <div class="status" id="status-b">
+              <svg><use href="#i-isha" /></svg><span>Isha 7:31 PM</span>
+            </div>
+          </div>
+
+          <div id="island">
+            <div id="bar">
+              <div class="bar-left">
+                <div class="bar-icon" id="bar-icon">
+                  <svg id="ico-sunset"><use href="#i-maghrib" /></svg>
+                  <svg id="ico-bell" viewBox="0 0 36 24">
+                    <use href="#i-bell" />
+                    <g
+                      id="bell-waves"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      fill="none"
+                    >
+                      <path d="M8.6 6.4a8.5 8.5 0 0 0 0 9.2M5.2 4.2a12.5 12.5 0 0 0 0 13.6" />
+                      <path d="M27.4 6.4a8.5 8.5 0 0 1 0 9.2M30.8 4.2a12.5 12.5 0 0 1 0 13.6" />
+                    </g>
+                  </svg>
+                </div>
+                <span>Maghrib</span>
+              </div>
+              <div class="bar-right">
+                <span id="c4">0:04</span><span id="c3">0:03</span><span id="c2">0:02</span
+                ><span id="c1">0:01</span><span id="c0">now</span>
+              </div>
+            </div>
+
+            <div id="details">
+              <div id="head-up">
+                <div class="cap-row">
+                  <span>Next prayer · 6:15 PM</span><span>Karachi · 24 Rabiʻ II 1448</span>
+                </div>
+                <div class="prog"><span id="prog-fill"></span></div>
+              </div>
+              <div id="head-ring">
+                <div>
+                  <div class="ring-title">Maghrib</div>
+                  <div class="ring-cap">It's time to pray · 6:15 PM</div>
+                </div>
+                <div id="stop">Stop</div>
+              </div>
+              <div id="strip"></div>
+            </div>
+          </div>
+
+          <svg id="cursor" viewBox="0 0 24 28">
+            <path
+              d="M3 2v20l5.5-5 3.5 8 3.2-1.4-3.4-7.8H19z"
+              fill="#111"
+              stroke="#fff"
+              stroke-width="1.6"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Scene 1: hook -->
+      <div id="s1" class="clip" data-start="0" data-duration="4.4" data-track-index="2">
+        <div class="copy serif" id="s1-wrap">
+          <span class="line"><span id="h1a">Your Mac has a notch.</span></span>
+          <span class="line"><span id="h1b"><em>Let it call you to prayer.</em></span></span>
+        </div>
+      </div>
+
+      <!-- Scene 2: the island opens -->
+      <div id="s2" class="clip" data-start="4.3" data-duration="3" data-track-index="3">
+        <div class="copy" id="s2-wrap">
+          <div class="kicker" id="s2-kicker">The island</div>
+          <div class="serif">
+            <span class="line"><span id="h2a">Point at it for the day's timetable.</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 3: the alarm -->
+      <div id="s3" class="clip" data-start="7.1" data-duration="5.8" data-track-index="2">
+        <div class="copy" id="s3-wrap">
+          <div class="kicker" id="s3-kicker">Maghrib · 6:15 PM</div>
+          <div class="serif">
+            <span class="line"><span id="h3a">The adhan, at each prayer.</span></span>
+          </div>
+          <div class="sub" id="s3-sub">Recorded at Masjid an-Nabawi, Madinah.</div>
+        </div>
+      </div>
+
+      <!-- Scene 4: the desktop card, through the day -->
+      <div id="s4" class="clip" data-start="12.5" data-duration="6.5" data-track-index="3">
+        <div id="s4-bg">
+          <div id="s4-skies"></div>
+          <div id="s4-dim"></div>
+        </div>
+        <div id="s4-content">
+          <div id="s4-copy">
+            <div class="kicker" id="s4-kicker">The desktop card</div>
+            <div class="serif">
+              <span class="line"><span id="h4a">Or a card that</span></span>
+              <span class="line"><span id="h4b"><em>follows the sky.</em></span></span>
+            </div>
+            <div class="sub" id="s4-sub">Drag it anywhere on the desktop.</div>
+          </div>
+          <div id="card-wrap">
+            <div id="card-stack"></div>
+            <div id="card-edge"></div>
+          </div>
+          <div id="periods">
+            <div class="rail"></div>
+            <div id="pdot"></div>
+            <div class="labels" id="plabels"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 5: outro -->
+      <div id="s5" class="clip" data-start="18.4" data-duration="6.4" data-track-index="2">
+        <div id="s5-lock">
+          <img id="s5-icon" src="assets/img/app-icon.png" alt="Namaz app icon" />
+          <div id="s5-text">
+            <div class="serif" id="s5-name">
+              <span class="line"><span id="h5a">Namaz</span></span>
+            </div>
+            <div id="s5-tag">Prayer times and alarms for macOS.</div>
+            <div id="s5-link">Free and open source · github.com/MajorAbdullah/namaz</div>
+          </div>
+        </div>
+        <div id="s5-credit">
+          Adhan excerpt: “Call to prayer from the Prophet’s Mosque” by ejaz215, Freesound · CC BY 3.0
+        </div>
+      </div>
+
+      <!-- The adhan starts on the frame the countdown reaches zero. Nothing plays over it. -->
+      <audio
+        id="adhan"
+        src="assets/audio/adhan-opening.m4a"
+        data-start="6.6"
+        data-duration="17.75"
+        data-track-index="10"
+        data-volume="0.9"
+      ></audio>
+      <audio
+        id="sfx-island"
+        src="assets/sfx/interface/drop_001.ogg"
+        data-start="2.68"
+        data-duration="0.1"
+        data-track-index="11"
+        data-volume="0.3"
+      ></audio>
+      <audio
+        id="sfx-hover"
+        src="assets/sfx/ui/rollover2.ogg"
+        data-start="4.22"
+        data-duration="0.05"
+        data-track-index="12"
+        data-volume="0.28"
+      ></audio>
+    </div>
+
+    <script>
+      // ---------- Content, taken from the app's own interface for Karachi on 5 October ----------
+      const PRAYERS = ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"];
+      const ICONS = ["i-fajr", "i-sunrise", "i-dhuhr", "i-asr", "i-maghrib", "i-isha"];
+      const TIMES = ["5:10", "6:26", "12:20", "4:36", "6:15", "7:31"];
+      const TOMORROW = ["5:10", "6:26", "12:20", "4:35", "6:14", "7:30"];
+
+      // SkyTheme.swift, one entry per part of the day, with what the card shows then.
+      const DAY = [
+        { period: "Dawn", colors: ["#16184a", "#41357a", "#a65b7b"], glow: "255,154,107", at: [85, 110], stars: true,
+          title: "Sunrise", count: "46:00", cap: "Fajr ends · 6:26 AM", hijri: "24", prog: 39, cur: 0, next: 1 },
+        { period: "Morning", colors: ["#14457f", "#2a72b8", "#4690cc"], glow: "159,210,255", at: [100, 110], stars: false,
+          title: "Dhuhr", count: "3:20:00", cap: "Next prayer · 12:20 PM", hijri: "24", prog: 44, cur: -1, next: 2 },
+        { period: "Midday", colors: ["#0a4a80", "#1273ab", "#2493bd"], glow: "168,230,255", at: [50, 125], stars: false,
+          title: "Asr", count: "3:06:00", cap: "Next prayer · 4:36 PM", hijri: "24", prog: 27, cur: 2, next: 3 },
+        { period: "Afternoon", colors: ["#29487a", "#7a5870", "#b86c39"], glow: "255,196,107", at: [105, 60], stars: false,
+          title: "Maghrib", count: "1:05:00", cap: "Next prayer · 6:15 PM", hijri: "24", prog: 34, cur: 3, next: 4 },
+        { period: "Dusk", colors: ["#21184d", "#6c2b69", "#c4523f"], glow: "255,138,76", at: [10, 115], stars: false,
+          title: "Isha", count: "46:00", cap: "Next prayer · 7:31 PM", hijri: "25", prog: 39, cur: 4, next: 5 },
+        { period: "Night", colors: ["#060a1f", "#0f1b3e", "#1c2c58"], glow: "143,178,255", at: [90, 0], stars: true,
+          title: "Fajr", count: "6:40:00", cap: "Next prayer · 5:10 AM", hijri: "25", prog: 31, cur: -1, next: 0, times: TOMORROW },
+      ];
+
+      // Loudness of the adhan excerpt, one value per 0.1s, pre-extracted so the render is deterministic.
+      const ENV = [0.38,0.41,0.45,0.55,0.58,0.63,0.67,0.69,0.71,0.74,0.78,0.83,0.88,0.85,0.84,0.81,0.74,0.69,0.72,0.69,0.67,0.63,0.6,0.58,0.57,0.54,0.57,0.59,0.59,0.58,0.6,0.6,0.59,0.59,0.62,0.63,0.62,0.65,0.64,0.64,0.66,0.66,0.62,0.63,0.62,0.61,0.63,0.65,0.66,0.67,0.66,0.72,0.74,0.75,0.82,0.82,0.78,0.79,0.76,0.71,0.71,0.69,0.67,0.67,0.64,0.62,0.6,0.58,0.57,0.57,0.58,0.58,0.58,0.58,0.58,0.57,0.59,0.59,0.6,0.6,0.59,0.59,0.61,0.6,0.61,0.61,0.63,0.66,0.66,0.66,0.67,0.63,0.53,0.48,0.45,0.44,0.45,0.47,0.49,0.48,0.5,0.55,0.62,0.65,0.73,0.77,0.77,0.79,0.82,0.8,0.77,0.73,0.69,0.65,0.61,0.59,0.62,0.62,0.62,0.61,0.6,0.57,0.55,0.55,0.56,0.59,0.61,0.65,0.68,0.71,0.72,0.74,0.79,0.8,0.81,0.84,0.84,0.83,0.82,0.74,0.63,0.59,0.53,0.5,0.52,0.51,0.48,0.44,0.38,0.33,0.29,0.25,0.2,0.16,0.14,0.12,0.11,0.09,0.08,0.07,0.07,0.06,0.06,0.05,0.05,0.04,0.04,0.03,0.03,0.03,0.03,0.02,0.02,0.01,0.01,0.01,0.01,0];
+
+      // SplitMix-style generator, as the app uses, so the stars land in the same places every render.
+      function seeded(seed) {
+        let s = seed >>> 0;
+        return function () {
+          s = (s + 0x6d2b79f5) >>> 0;
+          let t = Math.imul(s ^ (s >>> 15), 1 | s);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      function starField(count, width, height, maxRadius, seed) {
+        const random = seeded(seed);
+        let html = "";
+        for (let i = 0; i < count; i++) {
+          const x = random() * width;
+          const y = random() * 0.62 * height;
+          const d = (0.35 + random() * 0.7) * maxRadius * 2;
+          const o = 0.15 + random() * 0.45;
+          html += `<i class="star" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${d.toFixed(1)}px;height:${d.toFixed(1)}px;opacity:${o.toFixed(2)}"></i>`;
+        }
+        return html;
+      }
+      const icon = (id) => `<svg><use href="#${id}" /></svg>`;
+      const skyCss = (c) => `linear-gradient(180deg, ${c[0]} 0%, ${c[1]} 50%, ${c[2]} 100%)`;
+
+      document.getElementById("stars").innerHTML = starField(110, 1920, 1080, 2.6, 11);
+
+      // The island's timetable.
+      document.getElementById("strip").innerHTML = PRAYERS.map(
+        (name, i) =>
+          `<div class="col" id="col-${i}"><div class="fill"></div><div class="ring"></div>` +
+          `<div class="col-in">${icon(ICONS[i])}<span class="t">${name}</span><span class="v">${TIMES[i]}</span></div></div>`,
+      ).join("");
+
+      // The desktop card at six moments of the day, and the dimmed sky behind each.
+      document.getElementById("card-stack").innerHTML = DAY.map((d, n) => {
+        const times = d.times || TIMES;
+        const cols = PRAYERS.map((name, i) => {
+          const state = i === d.next ? "next" : i === d.cur ? "cur" : i < d.next ? "past" : "";
+          return `<div class="c-col ${state}">${icon(ICONS[i])}<span class="t">${name}</span><span class="v">${times[i]}</span></div>`;
+        }).join("");
+        const glow = `radial-gradient(circle 481px at ${d.at[0]}% ${d.at[1]}%, rgba(${d.glow},0.5), rgba(${d.glow},0))`;
+        return (
+          `<div class="card" id="card-${n}"><div class="cbg" style="background:${skyCss(d.colors)}"></div>` +
+          `<div class="cglow" style="background:${glow}"></div>` +
+          (d.stars ? `<div class="cstars">${starField(30, 874, 507, 2.2, 11)}</div>` : "") +
+          `<div class="cin"><div class="c-head"><span class="place">${icon("i-place")}Karachi</span><span>${d.hijri} Rabiʻ II 1448</span></div>` +
+          `<div class="c-title"><span>${d.title}</span><span>${d.count}</span></div>` +
+          `<div class="c-cap"><span>${d.cap}</span><span>remaining</span></div>` +
+          `<div class="c-prog"><i style="width:${d.prog}%"></i></div>` +
+          `<div class="c-strip">${cols}</div></div></div>`
+        );
+      }).join("");
+      document.getElementById("s4-skies").innerHTML = DAY.map(
+        (d, n) => `<div class="bgsky" id="bgsky-${n}" style="background:${skyCss(d.colors)};opacity:${n === 0 ? 1 : 0}"></div>`,
+      ).join("");
+      document.getElementById("plabels").innerHTML = DAY.map((d, n) => `<span id="plabel-${n}">${d.period}</span>`).join("");
+
+      // ---------- Timeline ----------
+      const RING = 6.6; // Maghrib: the countdown reaches zero and the adhan starts.
+      const tl = gsap.timeline({ paused: true });
+      const rise = (target, at, duration = 0.7) =>
+        tl.fromTo(target, { yPercent: 115 }, { yPercent: 0, duration, ease: "power3.out" }, at);
+      const envelope = (from, count, shape) =>
+        ENV.slice(from, from + count).map((e) => Object.assign({ duration: 0.1 }, shape(e)));
+
+      // Ambient: the afternoon glow swells slowly while the desktop is on screen.
+      tl.fromTo("#glow-asr", { scale: 1 }, { scale: 1.14, duration: RING, ease: "sine.inOut" }, 0);
+
+      // Scene 1 — hook.
+      rise("#h1a", 0.2, 0.6);
+      rise("#h1b", 1.1);
+      tl.to("#s1-wrap", { opacity: 0, y: -24, duration: 0.35, ease: "power2.in" }, 3.9);
+
+      // The notch grows wings and becomes the island at rest.
+      tl.to("#island", { width: 1107, borderRadius: "0px 0px 36px 36px", duration: 0.7, ease: "power3.out" }, 2.7);
+      tl.to("#bar", { opacity: 1, duration: 0.35, ease: "power1.out" }, 3.0);
+
+      // The countdown ticks once a second, as the app's does.
+      [["#c4", "#c3", RING - 3], ["#c3", "#c2", RING - 2], ["#c2", "#c1", RING - 1], ["#c1", "#c0", RING]].forEach(
+        ([off, on, at]) => {
+          tl.set(off, { opacity: 0 }, at);
+          tl.set(on, { opacity: 1 }, at);
+        },
+      );
+
+      // Scene 2 — the pointer reaches the island and it opens into the day's timetable.
+      tl.to("#cursor", { opacity: 1, duration: 0.25 }, 3.2);
+      tl.fromTo("#cursor", { x: 1590, y: 790 }, { x: 1372, y: 48, duration: 0.95, ease: "power2.inOut" }, 3.25);
+      tl.to(
+        "#island",
+        { width: 1200, height: 492, borderRadius: "0px 0px 78px 78px", duration: 0.55, ease: "power3.out" },
+        4.25,
+      );
+      tl.to("#details", { opacity: 1, duration: 0.35, ease: "power1.out" }, 4.42);
+      tl.fromTo("#prog-fill", { scaleX: 0 }, { scaleX: 0.985, duration: 0.8, ease: "power2.out" }, 4.45);
+      tl.set("#col-3 .ring", { opacity: 1 }, 0);
+      tl.set("#col-4 .fill", { opacity: 1 }, 0);
+      tl.set(["#col-0 .col-in", "#col-1 .col-in", "#col-2 .col-in"], { opacity: 0.6 }, 0);
+      tl.to("#s2-kicker", { opacity: 1, duration: 0.4 }, 4.5);
+      rise("#h2a", 4.55);
+      tl.to("#s2-wrap", { opacity: 0, y: -24, duration: 0.3, ease: "power2.in" }, 6.85);
+
+      // Scene 3 — the alarm. The island opens by itself into its ringing state.
+      tl.to("#island", { height: 528, duration: 0.5, ease: "power3.out" }, RING);
+      tl.to("#strip", { y: 36, duration: 0.5, ease: "power3.out" }, RING);
+      tl.to("#head-up", { opacity: 0, duration: 0.2 }, RING);
+      tl.to("#head-ring", { opacity: 1, duration: 0.35 }, RING + 0.15);
+      tl.fromTo("#stop", { scale: 0.82 }, { scale: 1, duration: 0.5, ease: "back.out(2)" }, RING + 0.15);
+      tl.to("#ico-sunset", { opacity: 0, duration: 0.2 }, RING);
+      tl.to("#ico-bell", { opacity: 1, duration: 0.2 }, RING);
+      tl.to("#bar-icon", { color: "#ff8a4c", duration: 0.8 }, RING);
+      // Maghrib is now the prayer in progress; Isha is next.
+      tl.to("#col-3 .ring", { opacity: 0, duration: 0.35 }, RING + 0.1);
+      tl.to("#col-3 .col-in", { opacity: 0.6, duration: 0.35 }, RING + 0.1);
+      tl.to("#col-4 .fill", { opacity: 0, duration: 0.35 }, RING + 0.1);
+      tl.to("#col-4 .ring", { opacity: 1, duration: 0.35 }, RING + 0.1);
+      tl.to("#col-5 .fill", { opacity: 1, duration: 0.35 }, RING + 0.1);
+      tl.to("#status-a", { opacity: 0, duration: 0.3 }, RING + 0.2);
+      tl.to("#status-b", { opacity: 1, duration: 0.3 }, RING + 0.35);
+      // The sky turns from afternoon to dusk.
+      tl.to("#sky-maghrib", { opacity: 1, duration: 1.6, ease: "power1.inOut" }, RING);
+      tl.to("#cursor", { x: 1640, y: 610, duration: 0.9, ease: "power2.inOut" }, RING + 0.4);
+      tl.to("#cursor", { opacity: 0, duration: 0.3 }, RING + 1.0);
+
+      // The dusk glow and the bell's waves follow the adhan's loudness.
+      tl.to(
+        "#glow-maghrib",
+        { keyframes: envelope(0, 66, (e) => ({ opacity: 0.45 + 0.55 * e, scale: 1 + 0.14 * e })), ease: "none" },
+        RING,
+      );
+      tl.to("#bell-waves", { keyframes: envelope(0, 66, (e) => ({ opacity: 0.25 + 0.75 * e })), ease: "none" }, RING);
+
+      tl.to("#s3-kicker", { opacity: 1, duration: 0.4 }, 7.3);
+      rise("#h3a", 7.4);
+      tl.fromTo("#s3-sub", { y: 18 }, { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 8.4);
+      tl.to("#s3-wrap", { opacity: 0, y: -24, duration: 0.35, ease: "power2.in" }, 12.3);
+      tl.to("#desk-inner", { y: -620, duration: 0.55, ease: "power2.in" }, 12.45);
+
+      // Scene 4 — the desktop card steps through the day.
+      tl.to("#s4-bg", { opacity: 1, duration: 0.55, ease: "power1.inOut" }, 12.55);
+      tl.set("#sky-isha", { opacity: 1 }, 14); // behind scene 4, ready for the outro
+      tl.to("#s4-kicker", { opacity: 1, duration: 0.4 }, 12.95);
+      rise("#h4a", 13.0);
+      rise("#h4b", 13.15);
+      tl.fromTo("#s4-sub", { y: 18 }, { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 13.6);
+      tl.fromTo(
+        "#card-wrap",
+        { y: 70, scale: 0.96 },
+        { y: 0, scale: 1, opacity: 1, duration: 0.7, ease: "power3.out" },
+        12.9,
+      );
+      tl.to("#periods", { opacity: 1, duration: 0.4 }, 13.3);
+      tl.set("#plabel-0", { color: "#ffffff" }, 0);
+      [14.0, 14.7, 15.4, 16.1, 16.8].forEach((at, n) => {
+        const i = n + 1;
+        tl.to(`#card-${i}`, { opacity: 1, duration: 0.22, ease: "power1.inOut" }, at);
+        tl.set(`#card-${i - 1}`, { opacity: 0 }, at + 0.23); // covered by now
+        tl.to(`#bgsky-${i}`, { opacity: 1, duration: 0.5, ease: "power1.inOut" }, at);
+        tl.to("#pdot", { x: i * 145.67, duration: 0.4, ease: "power2.inOut" }, at);
+        tl.to(`#plabel-${i - 1}`, { color: "rgba(255,255,255,0.62)", duration: 0.3 }, at);
+        tl.to(`#plabel-${i}`, { color: "#ffffff", duration: 0.3 }, at);
+      });
+      tl.to("#s4-content", { opacity: 0, y: -24, duration: 0.4, ease: "power2.in" }, 18.15);
+      tl.to("#s4-bg", { opacity: 0, duration: 0.6, ease: "power1.inOut" }, 18.35);
+
+      // Scene 5 — outro under the night sky.
+      tl.to("#stars", { opacity: 1, duration: 1 }, 18.4);
+      tl.to(
+        "#glow-isha",
+        { keyframes: envelope(118, 60, (e) => ({ opacity: 0.6 + 0.4 * e, scale: 1 + 0.1 * e })), ease: "none" },
+        18.4,
+      );
+      tl.fromTo(
+        "#s5-icon",
+        { scale: 0.82, y: 30 },
+        { scale: 1, y: 0, opacity: 1, duration: 0.8, ease: "power3.out" },
+        18.6,
+      );
+      rise("#h5a", 18.85, 0.8);
+      tl.fromTo("#s5-tag", { y: 18 }, { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 19.35);
+      tl.fromTo("#s5-link", { y: 18 }, { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 19.85);
+      tl.to("#s5-credit", { opacity: 1, duration: 0.6 }, 20.4);
+      tl.fromTo("#s5-lock", { scale: 1 }, { scale: 1.03, duration: 6.2, ease: "none" }, 18.6);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

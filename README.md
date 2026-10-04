@@ -3,6 +3,10 @@
 Prayer times and alarms for macOS: a menu bar item, an island at the notch (or a card on the
 desktop), and the adhan at each prayer.
 
+[![The island at the notch, open and ringing for Maghrib](brag-output/brag.jpg)](brag-output/brag.mp4)
+
+Click the picture to watch a 25-second video of it, with sound.
+
 ## Install
 
 1. Download **Namaz-1.0.dmg** from the
