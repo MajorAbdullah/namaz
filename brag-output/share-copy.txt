@@ -1,0 +1,2 @@
+Introducing Namaz: prayer times at your Mac's notch, and the adhan when each one arrives.
+A free, open-source menu bar app for macOS, built in Swift. github.com/MajorAbdullah/namaz
