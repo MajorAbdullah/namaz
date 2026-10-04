@@ -12,6 +12,13 @@ desktop), and the adhan at each prayer.
    it is not signed with a paid Apple developer account. Click **Done**, then go to
    System Settings → Privacy & Security, scroll down, and click **Open Anyway**.
 
+Or, instead of step 3's detour through System Settings, clear the download flag from the app
+in Terminal and then open it as usual:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Namaz.app
+```
+
 It needs macOS 14 or later, on an Apple Silicon or Intel Mac. It was built and tested on
 macOS 27 on Apple Silicon; the Intel build has not been run.
 
@@ -90,6 +97,11 @@ longer than at noon for Asr, and so on).
 ```bash
 make test
 ```
+
+## Licence
+
+The code is released under the [MIT Licence](LICENSE). The adhan recording is not covered by
+it; it has its own licence, below.
 
 ## Credits
 
