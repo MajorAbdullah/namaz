@@ -144,6 +144,11 @@ Contributions are welcome: bug reports, ideas and pull requests.
 - **Want to change the code?** Fork the repo, make your change on a branch, and open a pull
   request. You need only the Command Line Tools; see [Development](#development) for the layout
   and the commands.
+- **New to the code?** [AGENTS.md](AGENTS.md) is the working guide: setup, where things live,
+  the pitfalls, and how to make the common kinds of change. Coding agents read it too
+  (Claude Code picks it up through `CLAUDE.md`).
+- **`main` is protected.** Changes go in through pull requests, and each one needs the owner's
+  review before it can be merged.
 - **Before you open a pull request**, run `make test` and make sure it passes. If you change how
   times are calculated, add a test for it. If you change how something looks, a screenshot in
   the pull request helps.

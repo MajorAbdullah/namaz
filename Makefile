@@ -33,8 +33,8 @@ dist: build ## Make build/Namaz-<version>.dmg for sharing
 # Without Xcode, SwiftPM intermittently fails to find Swift Testing's macro plugin, so name it.
 TESTING_PLUGINS := $(shell dirname "$$(xcrun --find swift)")/../lib/swift/host/plugins/testing
 
-test: ## Run the tests
-	swift test $(if $(wildcard $(TESTING_PLUGINS)),-Xswiftc -plugin-path -Xswiftc $(TESTING_PLUGINS))
+test: ## Run the tests (one suite: make test FILTER=FormattingTests)
+	swift test $(if $(FILTER),--filter $(FILTER)) $(if $(wildcard $(TESTING_PLUGINS)),-Xswiftc -plugin-path -Xswiftc $(TESTING_PLUGINS))
 
 status: ## Say whether the app is running
 	@pgrep -x Namaz > /dev/null && echo "Namaz is running" || echo "Namaz is not running"
