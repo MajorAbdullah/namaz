@@ -8,16 +8,51 @@ desktop), and the adhan at each prayer.
 1. Download **Namaz-1.0.dmg** from the
    [latest release](https://github.com/MajorAbdullah/namaz/releases/latest).
 2. Open it and drag **Namaz** onto **Applications**.
-3. Open Namaz from Applications. The first time, macOS says it cannot verify the app, because
-   it is not signed with a paid Apple developer account. Click **Done**, then go to
-   System Settings → Privacy & Security, scroll down, and click **Open Anyway**.
+3. Open Namaz from Applications.
 
-Or, instead of step 3's detour through System Settings, clear the download flag from the app
-in Terminal and then open it as usual:
+The first time, macOS will refuse to open it. See the next section.
+
+## If macOS won't open it
+
+Namaz is not signed with a paid Apple developer account, so macOS blocks it the first time.
+This is expected, and you only have to get past it once.
+
+**"Namaz" Not Opened: Apple could not verify "Namaz" is free of malware**
+
+1. Click **Done**. Do not click Move to Trash.
+2. Open **System Settings → Privacy & Security** and scroll to the bottom.
+3. Beside the note that "Namaz" was blocked, click **Open Anyway**, then confirm with your
+   password or Touch ID.
+
+If there is no **Open Anyway** button, try opening Namaz again first. The button only appears
+for a while after macOS has blocked the app.
+
+**The quicker way, or if the steps above don't work**
+
+Open Terminal, paste this, and press Return. It removes the "downloaded from the internet" flag
+that macOS is objecting to. Then open Namaz as usual.
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Namaz.app
 ```
+
+This is also the fix if macOS says **"Namaz" is damaged and can't be opened**. The app is not
+damaged; that is another form of the same block.
+
+**The .dmg file itself won't open**
+
+Clear the flag from the download instead, then open it again:
+
+```bash
+xattr -d com.apple.quarantine ~/Downloads/Namaz-1.0.dmg
+```
+
+**Still blocked**
+
+On a Mac managed by a company or school, the administrator may have turned off the option to
+open unverified apps. In that case only they can allow it.
+
+## Requirements
 
 It needs macOS 14 or later, on an Apple Silicon or Intel Mac. It was built and tested on
 macOS 27 on Apple Silicon; the Intel build has not been run.
