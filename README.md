@@ -133,6 +133,30 @@ longer than at noon for Asr, and so on).
 make test
 ```
 
+## Contributing
+
+Contributions are welcome: bug reports, ideas and pull requests.
+
+- **Found a problem or have an idea?** Open an
+  [issue](https://github.com/MajorAbdullah/namaz/issues). For a wrong prayer time, include your
+  city or coordinates, the date, the method and Asr school from Settings, and the time you
+  expected along with where it comes from.
+- **Want to change the code?** Fork the repo, make your change on a branch, and open a pull
+  request. You need only the Command Line Tools; see [Development](#development) for the layout
+  and the commands.
+- **Before you open a pull request**, run `make test` and make sure it passes. If you change how
+  times are calculated, add a test for it. If you change how something looks, a screenshot in
+  the pull request helps.
+
+Some things that would be good to have:
+
+- More built-in cities and calculation methods.
+- A separate adhan for Fajr.
+- Translations; the app is English-only.
+- Someone to run it on an Intel Mac and on macOS 14 to 26 and report back.
+
+Contributions are accepted under the MIT Licence, the same as the rest of the code.
+
 ## Licence
 
 The code is released under the [MIT Licence](LICENSE). The adhan recording is not covered by
