@@ -107,6 +107,15 @@ it to `UIDump.swift` so it is covered too.
 - User-facing strings are English only for now and live beside the views that show them.
 - Do not commit `build/` or `.build/`.
 
+## Releasing
+
+1. Set the new version in `Resources/Info.plist` (`CFBundleShortVersionString`, and raise
+   `CFBundleVersion` by one).
+2. Add an entry at the top of `CHANGELOG.md`, written for people who use the app.
+3. Run `make test`, then `make dist` to build `build/Namaz-<version>.dmg`.
+4. Commit, push, and publish a GitHub release tagged `v<version>` with the disk image attached
+   and the changelog entry as its notes.
+
 ## Sending changes
 
 `main` is protected. Work on a branch and open a pull request; every pull request needs the

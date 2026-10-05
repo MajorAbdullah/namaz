@@ -144,6 +144,22 @@ struct Reference: Sendable, CustomTestStringConvertible {
         #expect(adjusted.dhuhr == base.dhuhr)
     }
 
+    @Test func choosingAClockTimeGivesTheShortestAdjustment() throws {
+        let dhuhr = try #require(karachi(CalendarDay(year: 2026, month: 10, day: 4))).dhuhr  // 12:21
+        func minutes(to clock: String, dayOffset: Int = 0) throws -> Int {
+            let day = CalendarDay(year: 2026, month: 10, day: 4).adding(days: dayOffset)
+            let chosen = try #require(Self.date(clock, on: day, in: Self.pakistan))
+            return PrayerAdjustments.minutes(from: dhuhr, toClockTimeOf: chosen)
+        }
+
+        #expect(try minutes(to: "13:30") == 69)
+        #expect(try minutes(to: "12:00") == -21)
+        #expect(try minutes(to: "12:21") == 0)
+        // Only the clock time matters, not which day the picker's date happens to be on.
+        #expect(try minutes(to: "13:30", dayOffset: 1) == 69)
+        #expect(try minutes(to: "13:30", dayOffset: -3) == 69)
+    }
+
     @Test func everyTimeFallsOnTheRequestedLocalDate() throws {
         // Apia is UTC+13 but sits at 172°W, so its solar day belongs to the previous UTC date.
         let apia = try #require(TimeZone(identifier: "Pacific/Apia"))

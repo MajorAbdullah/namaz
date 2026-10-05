@@ -136,6 +136,13 @@ public struct PrayerAdjustments: Codable, Hashable, Sendable {
         get { minutes[prayer.rawValue] ?? 0 }
         set { minutes[prayer.rawValue] = newValue == 0 ? nil : newValue }
     }
+
+    /// The adjustment that moves a prayer from its calculated time to the clock time of
+    /// `chosen`, going whichever way round the clock is shorter (so never more than 12 hours).
+    public static func minutes(from calculated: Date, toClockTimeOf chosen: Date) -> Int {
+        let difference = Int((chosen.timeIntervalSince(calculated) / 60).rounded())
+        return ((difference + 720) % 1440 + 1440) % 1440 - 720
+    }
 }
 
 public struct PrayerConfiguration: Codable, Hashable, Sendable {

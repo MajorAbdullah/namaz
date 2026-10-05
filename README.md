@@ -7,7 +7,7 @@ https://github.com/user-attachments/assets/dbe27215-ea5d-4691-a895-f72465700a58
 
 ## Install
 
-1. Download **Namaz-1.0.dmg** from the
+1. Download the **.dmg** file from the
    [latest release](https://github.com/MajorAbdullah/namaz/releases/latest).
 2. Open it and drag **Namaz** onto **Applications**.
 3. Open Namaz from Applications.
@@ -46,7 +46,7 @@ damaged; that is another form of the same block.
 Clear the flag from the download instead, then open it again:
 
 ```bash
-xattr -d com.apple.quarantine ~/Downloads/Namaz-1.0.dmg
+xattr -d com.apple.quarantine ~/Downloads/Namaz-*.dmg
 ```
 
 **Still blocked**
@@ -94,7 +94,7 @@ Open Settings from the menu bar popover, or by opening the app again while it is
 | --- | --- |
 | General | Location (automatic, a city, or coordinates), what the menu bar shows, island or card, 12 or 24-hour clock, Hijri date adjustment, open at login |
 | Alarms | Which prayers ring, the sound and its volume, a test button, the advance reminder |
-| Calculation | Method, Asr school (Standard or Hanafi), high-latitude rule, per-prayer minute adjustments |
+| Calculation | Method, Asr school (Standard or Hanafi), high-latitude rule, and a time field for each prayer to move it to whatever time you want |
 
 The starting method and Asr school are picked from the Mac's time zone. In Pakistan that is the
 Karachi method (Fajr and Isha at 18°) with Hanafi Asr.
@@ -134,6 +134,8 @@ longer than at noon for Asr, and so on).
 ```bash
 make test
 ```
+
+What changed in each version is in the [changelog](CHANGELOG.md).
 
 ## Contributing
 

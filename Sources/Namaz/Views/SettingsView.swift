@@ -360,33 +360,46 @@ private struct CalculationSettings: View {
             Section {
                 ForEach(Prayer.allCases) { prayer in
                     LabeledContent(prayer.name) {
-                        Text(adjustmentSummary(for: prayer))
-                        Stepper(prayer.name, value: adjustment(for: prayer), in: -30...30)
-                            .labelsHidden()
+                        if model.settings.calculation.adjustments[prayer] != 0 {
+                            Text(shiftSummary(for: prayer))
+                            Button("Reset") { model.settings.calculation.adjustments[prayer] = 0 }
+                                .buttonStyle(.link)
+                        }
+                        if model.schedule != nil {
+                            DatePicker(prayer.name, selection: time(for: prayer), displayedComponents: .hourAndMinute)
+                                .labelsHidden()
+                        } else {
+                            Text("Not available here")
+                        }
                     }
                 }
             } header: {
-                Text("Adjust by Minutes")
+                Text("Adjust Times")
             } footer: {
-                Footnote("Shift individual times to match your mosque's timetable.")
+                Footnote("Set each prayer to the time you want it, by typing or with the arrows. The difference from the calculated time is what is kept, so the adjustment carries over to every day.")
             }
         }
         .formStyle(.grouped)
     }
 
-    private func adjustment(for prayer: Prayer) -> Binding<Int> {
+    /// Today's time for the prayer. Setting it stores how far that is from the calculated time.
+    private func time(for prayer: Prayer) -> Binding<Date> {
         Binding(
-            get: { model.settings.calculation.adjustments[prayer] },
-            set: { model.settings.calculation.adjustments[prayer] = $0 })
+            get: { model.schedule?.today[prayer] ?? model.now },
+            set: { chosen in
+                guard let shown = model.schedule?.today[prayer] else { return }
+                let current = model.settings.calculation.adjustments[prayer]
+                let calculated = shown.addingTimeInterval(Double(-current) * 60)
+                model.settings.calculation.adjustments[prayer] =
+                    PrayerAdjustments.minutes(from: calculated, toClockTimeOf: chosen)
+            })
     }
 
-    /// Today's time for the prayer, noting any shift applied: "5:12 AM (+3 min)".
-    private func adjustmentSummary(for prayer: Prayer) -> String {
+    /// "+1 h 9 min" or "−19 min".
+    private func shiftSummary(for prayer: Prayer) -> String {
         let minutes = model.settings.calculation.adjustments[prayer]
-        let shift = minutes == 0 ? "" : " (\(minutes > 0 ? "+" : "−")\(abs(minutes)) min)"
-        guard let time = model.schedule?.today[prayer] else {
-            return minutes == 0 ? "No change" : String(shift.dropFirst())
-        }
-        return model.clockFormat.time(time) + shift
+        let (hours, rest) = (abs(minutes) / 60, abs(minutes) % 60)
+        let amount = hours == 0 ? "\(rest) min" : rest == 0 ? "\(hours) h" : "\(hours) h \(rest) min"
+        return (minutes > 0 ? "+" : "−") + amount
     }
 }

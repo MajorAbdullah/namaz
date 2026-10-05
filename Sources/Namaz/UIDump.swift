@@ -63,6 +63,8 @@ enum UIDump {
         let actions = AppActions(openSettings: {}, quit: {})
         await save(PopoverView(model: model, actions: actions), as: "popover", in: directory,
                    background: .windowBackgroundColor)
+        // Show one adjusted prayer, so the picture covers that row's extra controls.
+        model.settings.calculation.adjustments[.dhuhr] = 69
         for tab in SettingsView.Tab.allCases {
             await save(SettingsView(model: model, tab: tab), as: "settings-\(tab.rawValue)", in: directory,
                        background: .windowBackgroundColor)
