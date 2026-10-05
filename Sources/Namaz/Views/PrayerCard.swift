@@ -279,6 +279,15 @@ struct TimesStrip: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
+        // There is no room for a bell on every column, so mark only the ones that will not ring.
+        .overlay(alignment: .topTrailing) {
+            if !row.alarmOn {
+                Image(systemName: "bell.slash.fill")
+                    .font(.system(size: 8, weight: .semibold))
+                    .opacity(0.75)
+                    .padding(5)
+            }
+        }
         .modifier(RowHighlight(state: row.state))
         .help(row.alarmOn ? "\(row.title) at \(row.time)" : "\(row.title) at \(row.time), alarm off")
     }

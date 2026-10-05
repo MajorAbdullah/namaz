@@ -2,6 +2,13 @@
 
 What changed in each version of Namaz, newest first.
 
+## 1.1.1 (5 October 2026)
+
+- **See at a glance which alarms are off.** In the island and the compact card, a prayer whose
+  alarm is switched off now has a small crossed-out bell on its column. Before, the only way to
+  tell was to open the menu bar popover or Settings, so an alarm turned off by accident went
+  unnoticed until it failed to ring.
+
 ## 1.1 (5 October 2026)
 
 - **Set any prayer to any time.** Settings → Calculation → Adjust Times now has a time field for
