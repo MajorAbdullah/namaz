@@ -29,6 +29,14 @@ struct ClockFormat {
         formatter(uses24Hour ? "HH:mm" : "h:mm").string(from: date)
     }
 
+    /// "6:00 PM" for a time on the same day as `now`, "Thu 6:00 PM" for any other.
+    func timeAndDay(_ date: Date, relativeTo now: Date) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        guard !calendar.isDate(date, inSameDayAs: now) else { return time(date) }
+        return formatter(uses24Hour ? "EEE HH:mm" : "EEE h:mm a").string(from: date)
+    }
+
     private static var cache: [String: DateFormatter] = [:]
 
     private func formatter(_ format: String) -> DateFormatter {

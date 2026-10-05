@@ -18,7 +18,7 @@ struct IslandMetrics: Equatable {
     }
 
     func expandedSize(ringing: Bool) -> CGSize {
-        CGSize(width: max(collapsedSize.width, 400), height: barHeight + (ringing ? 148 : 126))
+        CGSize(width: max(collapsedSize.width, 400), height: barHeight + (ringing ? 148 : 134))
     }
 }
 
@@ -43,9 +43,10 @@ struct IslandView: View {
             IslandContent(
                 content: CardContent.make(
                     schedule: model.schedule, settings: model.settings, ringing: model.ringing,
-                    now: model.time(for: timeline.date), timeZone: model.timeZone),
+                    prayed: model.prayed, now: model.time(for: timeline.date), timeZone: model.timeZone),
                 metrics: state.metrics,
                 isExpanded: state.isExpanded,
+                onPrayed: { model.setPrayed(true, for: $0) },
                 onStop: { model.stopAlarm() })
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -56,6 +57,7 @@ struct IslandContent: View {
     let content: CardContent
     let metrics: IslandMetrics
     let isExpanded: Bool
+    var onPrayed: (PrayerEvent) -> Void = { _ in }
     var onStop: () -> Void = {}
 
     private var isRinging: Bool {
@@ -76,7 +78,8 @@ struct IslandContent: View {
             bottomTrailingRadius: bottom, topTrailingRadius: top, style: .continuous)
     }
 
-    private var accent: Color { SkyTheme(period: content.period).glow }
+    /// The colour of the part of the day, or of the warning while there is one.
+    private var accent: Color { content.urgency.color ?? SkyTheme(period: content.period).glow }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -91,6 +94,15 @@ struct IslandContent: View {
         .frame(width: size.width, height: size.height, alignment: .top)
         .foregroundStyle(.white)
         .background(.black)
+        .overlay(alignment: .bottom) {
+            // Light spilling from under the island, in the colour of the time left.
+            if let color = content.urgency.color {
+                LinearGradient(colors: [color.opacity(0), color.opacity(0.7)], startPoint: .top, endPoint: .bottom)
+                    .frame(height: 12)
+                    .modifier(Breathe(urgency: content.urgency))
+                    .allowsHitTesting(false)
+            }
+        }
         .clipShape(shape)
         .environment(\.colorScheme, .dark)
     }
@@ -103,8 +115,12 @@ struct IslandContent: View {
             HStack(spacing: 6) {
                 switch content.headline {
                 case .upcoming(let title, _):
-                    Image(systemName: content.rows.first { $0.state == .next }?.prayer.symbolName ?? "moon.stars.fill")
+                    Image(systemName: content.warning != nil
+                        ? content.urgency.symbolName
+                        : content.rows.first { $0.state == .next }?.prayer.symbolName ?? "moon.stars.fill")
                         .foregroundStyle(accent)
+                        .contentTransition(.symbolEffect(.replace))
+                        .symbolEffect(.bounce, value: content.urgency)
                     Text(title)
                 case .ringing(let title, _):
                     Image(systemName: "bell.and.waves.left.and.right.fill")
@@ -120,7 +136,12 @@ struct IslandContent: View {
             Spacer(minLength: 8)
             Group {
                 switch content.headline {
-                case .upcoming: Text(Countdown.precise(content.remaining)).monospacedDigit()
+                case .upcoming:
+                    Text(Countdown.precise(content.remaining))
+                        .monospacedDigit()
+                        .foregroundStyle(content.urgency.color ?? .white)
+                        .contentTransition(.numericText(countsDown: true))
+                        .animation(.snappy, value: Int(content.remaining.rounded(.up)))
                 case .ringing: Text("now")
                 case .unavailable: Text("No times")
                 }
@@ -139,12 +160,19 @@ struct IslandContent: View {
             case .upcoming(_, let caption):
                 HStack {
                     Text(caption)
+                        .opacity(0.65)
+                        .layoutPriority(1)
                     Spacer(minLength: 8)
-                    Text("\(content.placeName) · \(content.hijriDate)")
+                    // The button needs the room the place name would take.
+                    Text(content.open == nil ? "\(content.placeName) · \(content.hijriDate)" : content.hijriDate)
+                        .opacity(0.65)
+                    if let open = content.open {
+                        PrayedButton(prayer: open.prayer.name, isUrgent: content.warning != nil) { onPrayed(open) }
+                            .layoutPriority(1)
+                    }
                 }
                 .font(.system(size: 11.5, weight: .medium))
                 .lineLimit(1)
-                .opacity(0.65)
                 ProgressBar(value: content.progress, tint: accent)
                     .padding(.top, 8)
             case .ringing(let title, let caption):

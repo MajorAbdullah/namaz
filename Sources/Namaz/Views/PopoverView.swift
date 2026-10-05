@@ -26,6 +26,10 @@ struct PopoverView: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 6)
 
+            if model.settings.endOfTimeAlerts {
+                pauseRow
+            }
+
             Divider()
 
             HStack {
@@ -48,6 +52,35 @@ struct PopoverView: View {
             .padding(.horizontal, 6)
         }
         .padding(12)
+    }
+
+    /// A way to quieten the end-of-time alerts for a while, or to bring them back.
+    private var pauseRow: some View {
+        HStack {
+            if let until = model.settings.alertsPausedUntil, until > model.now {
+                Label("Alerts paused until \(model.clockFormat.timeAndDay(until, relativeTo: model.now))",
+                      systemImage: "pause.circle.fill")
+                Spacer()
+                Button("Resume") { model.resumeAlerts() }
+            } else {
+                Menu {
+                    Button("For 1 Hour") { model.pauseAlerts(.hour) }
+                    Button("For the Rest of Today") { model.pauseAlerts(.restOfToday) }
+                    Button("For 3 Days") { model.pauseAlerts(.days(3)) }
+                    Button("For 7 Days") { model.pauseAlerts(.days(7)) }
+                } label: {
+                    Label("Pause Alerts", systemImage: "pause.circle")
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .help("Stops the end-of-time alerts and the screen cover for a while. The adhan still rings.")
+                Spacer()
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .buttonStyle(.borderless)
+        .padding(.horizontal, 6)
     }
 }
 

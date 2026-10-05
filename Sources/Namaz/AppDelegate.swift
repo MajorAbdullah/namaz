@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var widget: WidgetPanelController?
     private var island: IslandController?
     private var banner: AlarmBannerController?
+    private var takeover: TakeoverController?
     private var settingsWindow: NSWindow?
     private var activity: NSObjectProtocol?
 
@@ -26,6 +27,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         widget = WidgetPanelController(model: model, actions: actions)
         island = IslandController(model: model, actions: actions)
         banner = AlarmBannerController(model: model)
+        // A run that only saves pictures must not cover the screen if it lands on a deadline.
+        if model.diagnostics.uiDumpDirectory == nil {
+            takeover = TakeoverController(model: model)
+        }
         model.start()
 
         if let directory = model.diagnostics.uiDumpDirectory {

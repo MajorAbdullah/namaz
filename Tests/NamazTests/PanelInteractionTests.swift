@@ -10,6 +10,7 @@ import Testing
 @Suite(.serialized) struct PanelInteractionTests {
     final class Recorder {
         var stopped = false
+        var prayed = false
     }
 
     /// Shows an alarm banner in a floating panel, as the app does.
@@ -142,5 +143,56 @@ import Testing
         try click(middle, in: panel)
         try await Task.sleep(for: .milliseconds(300))
         #expect(!recorder.stopped)
+    }
+
+    // MARK: - The screen cover's Prayed button
+
+    /// Shows the cover's button on its own, filling a small panel, with a short hold time.
+    func presentHoldButton(_ recorder: Recorder) async throws -> (panel: CoverPanel, centre: CGPoint) {
+        _ = NSApplication.shared
+        let hosting = ClickThroughHostingView(rootView: HoldToConfirmButton(
+            title: "Prayed", duration: 0.4, action: { recorder.prayed = true }))
+        let size = hosting.fittingSize
+        hosting.sizingOptions = []
+
+        let panel = CoverPanel()
+        // At the cover's own level it would sit over whatever is on screen while the test runs.
+        panel.level = .normal
+        panel.contentView = hosting
+        panel.setFrame(CGRect(origin: CGPoint(x: 120, y: 120), size: size), display: true)
+        panel.orderFrontRegardless()
+        try await Task.sleep(for: .milliseconds(400))
+        return (panel, CGPoint(x: size.width / 2, y: size.height / 2))
+    }
+
+    @Test func lettingGoOfThePrayedButtonEarlyDoesNothing() async throws {
+        let recorder = Recorder()
+        let (panel, centre) = try await presentHoldButton(recorder)
+        defer { panel.close() }
+
+        panel.sendEvent(try mouseEvent(.leftMouseDown, at: centre, in: panel))
+        try await Task.sleep(for: .milliseconds(100))
+        panel.sendEvent(try mouseEvent(.leftMouseUp, at: centre, in: panel))
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(!recorder.prayed)
+    }
+
+    @Test func holdingThePrayedButtonMarksThePrayer() async throws {
+        let recorder = Recorder()
+        let (panel, centre) = try await presentHoldButton(recorder)
+        defer { panel.close() }
+
+        panel.sendEvent(try mouseEvent(.leftMouseDown, at: centre, in: panel))
+        // The hold, then the moment the confirmation stays on screen.
+        try await Task.sleep(for: .milliseconds(1300))
+        #expect(recorder.prayed)
+        panel.sendEvent(try mouseEvent(.leftMouseUp, at: centre, in: panel))
+    }
+
+    @Test func theCoverTakesTheKeyboardAndSitsAboveEverything() {
+        let panel = CoverPanel()
+        #expect(panel.canBecomeKey)
+        #expect(panel.level == .screenSaver)
+        #expect(panel.collectionBehavior.isSuperset(of: [.canJoinAllSpaces, .fullScreenAuxiliary]))
     }
 }

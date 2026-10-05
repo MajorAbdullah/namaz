@@ -27,6 +27,14 @@ final class AppModel: ObservableObject {
     /// The prayer whose alarm is sounding or still on screen.
     @Published private(set) var ringing: PrayerEvent?
     @Published private(set) var menuBarTitle = ""
+    /// The prayers marked as prayed.
+    @Published private(set) var prayed: PrayedLog {
+        didSet {
+            if prayed != oldValue, !diagnostics.isActive { prayed.save() }
+        }
+    }
+    /// The open, unprayed prayer whose time is running out, if there is one.
+    @Published private(set) var warning: PrayerWarning?
 
     let location = LocationService()
     let diagnostics: Diagnostics
@@ -37,6 +45,7 @@ final class AppModel: ObservableObject {
     /// Alarms due at or before this instant have already been dealt with.
     private var alarmCursor: Date
     private var lastRung: AlarmOccurrence?
+    private var lastChime = Date.distantPast
     private var ringStarted = Date.distantPast
     private var dismissal: Task<Void, Never>?
     private var lastLocationRequest = Date.distantPast
@@ -45,6 +54,7 @@ final class AppModel: ObservableObject {
     init(diagnostics: Diagnostics = .fromEnvironment()) {
         self.diagnostics = diagnostics
         self.settings = diagnostics.isActive ? .defaults() : .load()
+        self.prayed = diagnostics.isActive ? PrayedLog() : .load()
         self.alarmCursor = Date().addingTimeInterval(diagnostics.clockOffset)
     }
 
@@ -107,6 +117,7 @@ final class AppModel: ObservableObject {
 
         ringDueAlarms(at: now)
         alarmCursor = now
+        updateWarning(at: now)
         updateMenuBarTitle(at: now)
         armTimer(from: now)
     }
@@ -141,11 +152,21 @@ final class AppModel: ObservableObject {
                 after: now, enabled: settings.alarmPrayers, reminderLead: settings.reminderLead) {
                 wakeTimes.append(change)
             }
-            if settings.menuBarStyle == .countdown, let next = schedule.next(after: now) {
+            if settings.menuBarStyle == .countdown || warning != nil, let next = schedule.next(after: now) {
                 // The menu bar countdown reads in whole minutes; redraw each time one runs out.
+                // A warning's deadline is a whole number of minutes from the next event, so the
+                // same beat serves both.
                 let partMinute = next.time.timeIntervalSince(now).truncatingRemainder(dividingBy: 60)
                 wakeTimes.append(now.addingTimeInterval(partMinute > 0 ? partMinute : 60))
             }
+            if settings.endOfTimeAlerts, let window = schedule.window(at: now),
+               !prayed.contains(window.event, in: timeZone),
+               let escalation = window.nextEscalation(after: now) {
+                wakeTimes.append(escalation)
+            }
+        }
+        if let resume = settings.alertsPausedUntil, resume > now {
+            wakeTimes.append(resume)
         }
 
         // A wall-clock deadline, so the timer tracks clock changes and fires on wake if it came
@@ -186,6 +207,14 @@ final class AppModel: ObservableObject {
                 ? "\(title) is at \(clockFormat.time(event.time))."
                 : "Fajr ends at \(clockFormat.time(event.time)).")
 
+        playChime()
+    }
+
+    /// A short sound for something that is not an alarm. At most one a second, so a reminder
+    /// and a warning that fall on the same instant are heard as one.
+    private func playChime() {
+        guard Date().timeIntervalSince(lastChime) > 1 else { return }
+        lastChime = Date()
         if settings.alarmSound != .silent, !diagnostics.mutesSound, let chime = NSSound(named: "Ping") {
             chime.volume = Float(settings.alarmVolume)
             chime.play()
@@ -247,12 +276,63 @@ final class AppModel: ObservableObject {
         settings.alarmPrayers.formSymmetricDifference([prayer])
     }
 
+    // MARK: - End of time
+
+    private func updateWarning(at now: Date) {
+        let updated = PrayerWarning.current(
+            schedule: schedule, settings: settings, prayed: prayed, now: now, timeZone: timeZone)
+        guard updated != warning else { return }
+
+        // A step up is worth a sound. Easing off is not, nor is the same stage of another prayer.
+        let previous = warning?.window == updated?.window ? warning?.urgency ?? .calm : .calm
+        if let updated, updated.urgency > previous {
+            Log.info("Warning: \(updated.title(in: timeZone)), stage \(updated.urgency)")
+            playChime()
+        }
+        warning = updated
+    }
+
+    func setPrayed(_ isPrayed: Bool, for event: PrayerEvent) {
+        var log = prayed
+        log.set(isPrayed, for: event, in: timeZone)
+        log.prune(before: CalendarDay(containing: now, in: timeZone).adding(days: -2))
+        prayed = log
+        refresh()
+    }
+
+    enum PauseLength {
+        case hour
+        /// Until the next Fajr, when a new day of prayers begins.
+        case restOfToday
+        case days(Int)
+    }
+
+    /// Keeps the end-of-time alerts quiet for a while. They come back by themselves.
+    func pauseAlerts(_ length: PauseLength) {
+        let now = self.now
+        switch length {
+        case .hour:
+            settings.alertsPausedUntil = now + 3600
+        case .restOfToday:
+            let nextFajr = schedule?.events.first { $0.prayer == .fajr && $0.time > now }?.time
+            settings.alertsPausedUntil = nextFajr ?? now + 86_400
+        case .days(let days):
+            settings.alertsPausedUntil = now + Double(days) * 86_400
+        }
+    }
+
+    func resumeAlerts() {
+        settings.alertsPausedUntil = nil
+    }
+
     // MARK: - Menu bar
 
     private func updateMenuBarTitle(at now: Date) {
         let title: String
         if let ringing {
             title = "\(ringing.title(in: timeZone)) now"
+        } else if let warning {
+            title = warning.menuBarTitle(at: now, in: timeZone)
         } else if let next = schedule?.next(after: now) {
             let name = next.title(in: timeZone)
             switch settings.menuBarStyle {

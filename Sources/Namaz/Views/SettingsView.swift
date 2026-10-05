@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     enum Tab: String, CaseIterable {
-        case general, alarms, calculation
+        case general, alarms, runningOut, calculation
     }
 
     @ObservedObject var model: AppModel
@@ -24,6 +24,9 @@ struct SettingsView: View {
             AlarmSettings(model: model)
                 .tabItem { Label("Alarms", systemImage: "bell") }
                 .tag(Tab.alarms)
+            RunningOutSettings(model: model)
+                .tabItem { Label("Running Out", systemImage: "hourglass") }
+                .tag(Tab.runningOut)
             CalculationSettings(model: model)
                 .tabItem { Label("Calculation", systemImage: "sun.horizon") }
                 .tag(Tab.calculation)
@@ -326,6 +329,62 @@ private struct AlarmSettings: View {
         } catch {
             importError = "That file couldn't be used: \(error.localizedDescription)"
         }
+    }
+}
+
+// MARK: - Running out
+
+/// What happens as an unprayed prayer's time runs out.
+private struct RunningOutSettings: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Alert me when a prayer's time is running out", isOn: $model.settings.endOfTimeAlerts)
+            } footer: {
+                Footnote("""
+                    From 20 minutes before a prayer's time ends, the island and card change colour \
+                    and pulse until you mark it as prayed. Asr counts down to 20 minutes before \
+                    Maghrib, after which delaying it is disliked.
+                    """)
+            }
+
+            Section {
+                Toggle("Cover the screen in the last 10 minutes", isOn: $model.settings.endOfTimeCover)
+                    .disabled(!model.settings.endOfTimeAlerts)
+            } footer: {
+                Footnote("""
+                    Every screen is covered until you press and hold Prayed, or the prayer's time \
+                    ends. There is no snooze. If you ever need the screen back at once, ⌘Q quits Namaz.
+                    """)
+            }
+
+            Section {
+                if let until = model.settings.alertsPausedUntil, until > model.now {
+                    LabeledContent("Paused until \(model.clockFormat.timeAndDay(until, relativeTo: model.now))") {
+                        Button("Resume") { model.resumeAlerts() }
+                    }
+                } else {
+                    LabeledContent("Pause for a while") {
+                        Menu("Pause Alerts") {
+                            Button("For 1 Hour") { model.pauseAlerts(.hour) }
+                            Button("For the Rest of Today") { model.pauseAlerts(.restOfToday) }
+                            Button("For 3 Days") { model.pauseAlerts(.days(3)) }
+                            Button("For 7 Days") { model.pauseAlerts(.days(7)) }
+                        }
+                        .fixedSize()
+                    }
+                    .disabled(!model.settings.endOfTimeAlerts)
+                }
+            } footer: {
+                Footnote("""
+                    A pause ends by itself. The adhan still rings while alerts are paused. The same \
+                    menu is in the menu bar popover.
+                    """)
+            }
+        }
+        .formStyle(.grouped)
     }
 }
 

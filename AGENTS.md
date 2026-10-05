@@ -67,6 +67,9 @@ layer that connects that logic to timers, sound and windows.
 - **Rebuilding changes the app's identity.** It is ad-hoc signed, so after each rebuild macOS
   asks again about location and notifications.
 - **The panel tests put real windows on screen** for a second or two. That is expected.
+- **The screen cover really covers the screen.** Starting the clock inside the last ten minutes
+  of a prayer (see below) brings it up at once. Hold Prayed for three seconds, or press ⌘Q,
+  which the app reserves system-wide while the cover is showing.
 
 ## Trying changes without waiting for a prayer time
 

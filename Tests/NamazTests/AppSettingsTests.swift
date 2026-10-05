@@ -37,6 +37,8 @@ import Testing
         settings.menuBarStyle = .countdown
         settings.clockStyle = .twentyFourHour
         settings.hijriDayOffset = -1
+        settings.endOfTimeCover = false
+        settings.alertsPausedUntil = Date(timeIntervalSinceReferenceDate: 812_000_000)
 
         settings.save(to: defaults)
         #expect(AppSettings.load(from: defaults) == settings)
@@ -55,6 +57,35 @@ import Testing
         #expect(settings.widgetLayout == .list)
         #expect(settings.alarmPrayers == AppSettings.defaults().alarmPrayers)
         #expect(settings.calculation == AppSettings.defaults().calculation)
+        #expect(settings.endOfTimeAlerts)
+        #expect(settings.endOfTimeCover)
+        #expect(settings.alertsPausedUntil == nil)
+    }
+
+    @Test func endOfTimeAlertsStartSwitchedOnAndUnpaused() {
+        let settings = AppSettings.defaults()
+        #expect(settings.endOfTimeAlerts)
+        #expect(settings.endOfTimeCover)
+        #expect(!settings.alertsArePaused(at: Date()))
+    }
+
+    @Test func aPauseLastsUntilItsInstantAndNoLonger() {
+        var settings = AppSettings.defaults()
+        let until = Date(timeIntervalSinceReferenceDate: 812_000_000)
+        settings.alertsPausedUntil = until
+        #expect(settings.alertsArePaused(at: until - 1))
+        #expect(!settings.alertsArePaused(at: until))
+    }
+
+    @Test func prayedMarksComeBackUnchanged() throws {
+        let defaults = try scratchDefaults()
+        #expect(PrayedLog.load(from: defaults) == PrayedLog())
+
+        var log = PrayedLog()
+        let zone = TimeZone(identifier: "Asia/Karachi")!
+        log.set(true, for: PrayerEvent(prayer: .asr, time: Date(timeIntervalSinceReferenceDate: 812_000_000)), in: zone)
+        log.save(to: defaults)
+        #expect(PrayedLog.load(from: defaults) == log)
     }
 
     @Test func anUnreadableValueFallsBackToItsDefaultAlone() throws {

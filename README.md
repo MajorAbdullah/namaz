@@ -84,6 +84,14 @@ without notifications the alarm still rings and still shows on screen.
 - **Alarms** at each prayer time: the adhan plays, the island opens with a Stop button (or a
   banner appears, when the card is in use), and a notification is posted. Optionally a reminder
   some minutes before.
+- **Prayed marks.** Press **Prayed** on the island, the card or the menu bar popover once you
+  have prayed, and a tick appears beside that prayer. In the popover you can tick or untick any
+  prayer that has started.
+- **End-of-time alerts** for a prayer you have not marked. From 20 minutes before its time ends
+  the island and card turn amber and pulse, then orange at 15. For the last 10 minutes every
+  screen is covered with "Prayer is better than work." until you press and hold **Prayed**; it
+  turns red for the last 5. Asr counts down to 20 minutes before Maghrib, and its cover stays
+  until Maghrib.
 - The Hijri date, which moves on at Maghrib, and the Qibla bearing.
 
 ## Settings
@@ -94,6 +102,7 @@ Open Settings from the menu bar popover, or by opening the app again while it is
 | --- | --- |
 | General | Location (automatic, a city, or coordinates), what the menu bar shows, island or card, 12 or 24-hour clock, Hijri date adjustment, open at login |
 | Alarms | Which prayers ring, the sound and its volume, a test button, the advance reminder |
+| Running Out | The end-of-time alerts, the screen cover, and pausing them |
 | Calculation | Method, Asr school (Standard or Hanafi), high-latitude rule, and a time field for each prayer to move it to whatever time you want |
 
 The starting method and Asr school are picked from the Mac's time zone. In Pakistan that is the
@@ -118,6 +127,10 @@ on offer, repeated for about twenty seconds, as is no sound at all.
   icons that reach that far sit behind it.
 - The app is signed only for this Mac. After a rebuild, macOS treats it as a new app and asks
   again about location and notifications.
+- The screen cover is strict on purpose: there is no snooze and no dismiss. **⌘Q quits Namaz**
+  from anywhere while the cover is up, if you need the screen back at once. To skip it ahead of
+  time, use **Pause Alerts** in the menu bar popover (an hour, the rest of today, 3 days or
+  7 days; it comes back by itself), or turn it off in Settings.
 - Times are rounded to the nearest minute. They can differ by a minute from another app or a
   mosque timetable, which is what the per-prayer adjustments are for.
 
