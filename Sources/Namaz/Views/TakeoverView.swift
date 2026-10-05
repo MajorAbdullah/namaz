@@ -30,7 +30,8 @@ struct TakeoverContent: View {
     static let headline = "Prayer is better than work."
 
     /// How long the Prayed button has to be held. Long enough that it is never pressed out of
-    /// habit, which matters because it is the only way to get the screen back.
+    /// habit, which matters because, short of the time running out or quitting Namaz, it is the
+    /// only way to get the screen back.
     static let holdDuration = 3.0
 
     private static let sunRadius: CGFloat = 42

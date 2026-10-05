@@ -31,7 +31,8 @@ final class IslandState: ObservableObject {
 
 /// A black island at the top of the screen, in the manner of the iPhone's Dynamic Island: at
 /// rest it shows the next prayer and a countdown either side of the notch, and it opens into
-/// the day's timetable when pointed at, or when an alarm rings.
+/// the day's timetable when pointed at, or when an alarm rings. While an unprayed prayer's time
+/// runs out it shows that prayer instead, counting down to its deadline in the warning's colour.
 struct IslandView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var state: IslandState
@@ -108,7 +109,8 @@ struct IslandContent: View {
     }
 
     /// The always-visible strip: what is next on the left, how long until it on the right, with
-    /// the notch (if any) between them.
+    /// the notch (if any) between them. During a warning, the prayer whose time is running out
+    /// and how long is left of it.
     @ViewBuilder
     private var bar: some View {
         HStack(spacing: 0) {
@@ -121,7 +123,9 @@ struct IslandContent: View {
                         .foregroundStyle(accent)
                         .contentTransition(.symbolEffect(.replace))
                         .symbolEffect(.bounce, value: content.urgency)
-                    Text(title)
+                    // During a warning, only the prayer's name: the hourglass and the colour say
+                    // the rest, and a longer title would run under the notch.
+                    Text(content.warning != nil ? content.openTitle ?? title : title)
                 case .ringing(let title, _):
                     Image(systemName: "bell.and.waves.left.and.right.fill")
                         .foregroundStyle(accent)
@@ -167,7 +171,9 @@ struct IslandContent: View {
                     Text(content.open == nil ? "\(content.placeName) · \(content.hijriDate)" : content.hijriDate)
                         .opacity(0.65)
                     if let open = content.open {
-                        PrayedButton(prayer: open.prayer.name, isUrgent: content.warning != nil) { onPrayed(open) }
+                        PrayedButton(prayer: content.openTitle ?? open.prayer.name, isUrgent: content.warning != nil) {
+                            onPrayed(open)
+                        }
                             .layoutPriority(1)
                     }
                 }

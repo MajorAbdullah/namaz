@@ -12,6 +12,8 @@ final class TakeoverController {
     private let quitHotKey = QuitHotKey()
     private var observers = Set<AnyCancellable>()
     private var isCovering = false
+    /// The app the user was in when the cover took the keyboard, to give it back to afterwards.
+    private var previouslyActive: NSRunningApplication?
 
     init(model: AppModel) {
         self.model = model
@@ -38,6 +40,7 @@ final class TakeoverController {
         quitHotKey.isHeld = isCovering
         guard isCovering else {
             panels.forEach(fadeOut)
+            handBackKeyboard()
             return
         }
 
@@ -46,7 +49,14 @@ final class TakeoverController {
         panels.dropFirst(screens.count).forEach { $0.orderOut(nil) }
         for (panel, screen) in zip(panels, screens) {
             panel.setFrame(screen.frame, display: true)
-            guard !panel.isVisible else { continue }
+            if panel.isVisible {
+                // Called back while fading out: come back up rather than finish going.
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.2
+                    panel.animator().alphaValue = 1
+                }
+                continue
+            }
             panel.alphaValue = 0
             panel.orderFrontRegardless()
             NSAnimationContext.runAnimationGroup { context in
@@ -56,8 +66,22 @@ final class TakeoverController {
         }
         // Take the keyboard if the system lets us, so typing does not carry on unseen in the
         // app underneath. Nothing depends on this succeeding.
+        if previouslyActive == nil, let front = NSWorkspace.shared.frontmostApplication,
+           front != NSRunningApplication.current {
+            previouslyActive = front
+        }
         panels.first?.makeKey()
         NSApp.activate()
+    }
+
+    /// Namaz has no window of its own to keep the keyboard in, so without this the user's app
+    /// would stay without focus until clicked, and a habitual ⌘Q would quit Namaz.
+    private func handBackKeyboard() {
+        guard let previous = previouslyActive else { return }
+        previouslyActive = nil
+        guard NSApp.isActive, !previous.isTerminated else { return }
+        NSApp.yieldActivation(to: previous)
+        previous.activate()
     }
 
     private func makePanel() -> CoverPanel {

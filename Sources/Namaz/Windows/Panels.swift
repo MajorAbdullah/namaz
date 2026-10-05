@@ -49,7 +49,8 @@ final class CoverPanel: NSPanel {
     override func keyDown(with event: NSEvent) {}
 }
 
-/// Hosts SwiftUI in a window that is never key. Without this, the first click on a button would
+/// Hosts SwiftUI in a window that is not key, or may not be: the panels, and the screen cover
+/// when the system keeps the keyboard with another app. Without this, the first click on a button would
 /// be swallowed as the click that "activates" the window.
 final class ClickThroughHostingView<Content: View>: NSHostingView<Content> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }

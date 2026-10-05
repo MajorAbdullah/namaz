@@ -39,6 +39,9 @@ struct CardContent {
     var rows: [Row]
     /// The prayer whose time is open and which has not been marked as prayed.
     var open: PrayerEvent?
+    /// That prayer's name as the user knows it, so Friday's Dhuhr is Jumu'ah. Short enough for
+    /// the island's narrow wings, where a warning's full title would run under the notch.
+    var openTitle: String?
     /// Set while that prayer is close to its deadline.
     var warning: PrayerWarning?
 
@@ -90,6 +93,7 @@ struct CardContent {
         }
         if let window = schedule.window(at: now), !prayed.contains(window.event, in: timeZone) {
             content.open = window.event
+            content.openTitle = window.event.title(in: timeZone)
         }
         content.warning = PrayerWarning.current(
             schedule: schedule, settings: settings, prayed: prayed, now: now, timeZone: timeZone)
@@ -197,7 +201,7 @@ struct PrayerCard: View {
                         .opacity(0.8)
                     Spacer(minLength: 8)
                     if let open = content.open {
-                        PrayedButton(prayer: open.prayer.name, isUrgent: content.warning != nil) {
+                        PrayedButton(prayer: content.openTitle ?? open.prayer.name, isUrgent: content.warning != nil) {
                             onSetPrayed(open, true)
                         }
                     } else {

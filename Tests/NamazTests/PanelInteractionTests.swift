@@ -5,7 +5,8 @@ import Testing
 
 /// The widget and the alarm banner live in windows that never become key, so that they cannot
 /// take keyboard focus from whatever the user is typing in. These tests send mouse events
-/// through such a window to make sure its controls still respond.
+/// through such a window to make sure its controls still respond. The screen cover can become
+/// key, but its button has to work even when the system does not let it.
 @MainActor
 @Suite(.serialized) struct PanelInteractionTests {
     final class Recorder {

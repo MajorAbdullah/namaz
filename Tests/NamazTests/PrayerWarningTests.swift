@@ -61,6 +61,9 @@ import Testing
         model.pauseAlerts(.hour)
         #expect(model.warning == nil)
         #expect(model.settings.alertsArePaused(at: model.now))
+        // Shown to the minute, so it ends on one.
+        let until = try #require(model.settings.alertsPausedUntil)
+        #expect(until.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 60) == 0)
 
         model.resumeAlerts()
         #expect(model.warning != nil)

@@ -43,7 +43,8 @@ struct AppSettings: Codable, Equatable, Sendable {
 
     /// Colour, chimes and the screen cover as an unprayed prayer's time runs out.
     var endOfTimeAlerts: Bool
-    /// Covers every screen for the last ten minutes, until the prayer is marked as prayed.
+    /// Covers every screen from ten minutes before a prayer's deadline until it is marked as
+    /// prayed or its time ends. For Asr that is from 30 minutes before Maghrib until Maghrib.
     var endOfTimeCover: Bool
     /// End-of-time alerts keep quiet until this instant. Nil, or in the past, means not paused.
     var alertsPausedUntil: Date?

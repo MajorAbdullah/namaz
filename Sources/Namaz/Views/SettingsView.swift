@@ -356,7 +356,8 @@ private struct RunningOutSettings: View {
             } footer: {
                 Footnote("""
                     Every screen is covered until you press and hold Prayed, or the prayer's time \
-                    ends. There is no snooze. If you ever need the screen back at once, ⌘Q quits Namaz.
+                    ends. For Asr it comes 30 minutes before Maghrib and stays until Maghrib. There \
+                    is no snooze. If you ever need the screen back at once, ⌘Q quits Namaz.
                     """)
             }
 
