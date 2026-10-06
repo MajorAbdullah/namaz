@@ -39,7 +39,9 @@ final class TakeoverController {
     private func update() {
         quitHotKey.isHeld = isCovering
         guard isCovering else {
-            panels.forEach(fadeOut)
+            // No fade: the view empties as soon as the warning goes, so there is nothing left to
+            // fade, and a panel that lingers would keep swallowing clicks and keys.
+            panels.forEach { $0.orderOut(nil) }
             handBackKeyboard()
             return
         }
@@ -49,14 +51,8 @@ final class TakeoverController {
         panels.dropFirst(screens.count).forEach { $0.orderOut(nil) }
         for (panel, screen) in zip(panels, screens) {
             panel.setFrame(screen.frame, display: true)
-            if panel.isVisible {
-                // Called back while fading out: come back up rather than finish going.
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = 0.2
-                    panel.animator().alphaValue = 1
-                }
-                continue
-            }
+            // Already up, as when a display changes: the new frame is all it needs.
+            if panel.isVisible { continue }
             panel.alphaValue = 0
             panel.orderFrontRegardless()
             NSAnimationContext.runAnimationGroup { context in
@@ -91,27 +87,14 @@ final class TakeoverController {
         panel.contentView = hosting
         return panel
     }
-
-    private func fadeOut(_ panel: CoverPanel) {
-        guard panel.isVisible else { return }
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.3
-            panel.animator().alphaValue = 0
-        } completionHandler: { [weak self] in
-            MainActor.assumeIsolated {
-                // The cover may have been called back during the fade; leave it up if so.
-                if self?.isCovering != true { panel.orderOut(nil) }
-            }
-        }
-    }
 }
 
 /// ⌘Q for the whole system, held only while the screen is covered.
 ///
 /// The cover cannot count on having keyboard focus: macOS may leave it with the app the user
 /// was typing in, and an ordinary ⌘Q would then quit that app, out of sight. A hot key reaches
-/// Namaz whichever app is in front. It is the one way out of the cover other than praying, and
-/// it is why a fault in the cover can never lock the Mac.
+/// Namaz whichever app is in front. It is the one way out of the cover other than praying, so
+/// if reserving the key fails, holding Prayed still works, and the other way round.
 @MainActor
 private final class QuitHotKey {
     private var hotKey: EventHotKeyRef?

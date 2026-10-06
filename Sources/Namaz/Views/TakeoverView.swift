@@ -7,17 +7,21 @@ struct TakeoverView: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        // Start on a whole second so the countdown ticks in step with the clock.
-        let start = Date(timeIntervalSinceReferenceDate: Date().timeIntervalSinceReferenceDate.rounded(.down))
-        TimelineView(.periodic(from: start, by: 1)) { timeline in
-            if let warning = model.warning {
-                let now = model.time(for: timeline.date)
-                TakeoverContent(
-                    detail: warning.detail(at: now, in: model.timeZone),
-                    urgency: warning.urgency,
-                    period: warning.window.event.prayer,
-                    sun: warning.sunHeight(at: now),
-                    onPrayed: { model.setPrayed(true, for: warning.window.event) })
+        // The timeline lives only while there is a warning, so the hidden panel does no work
+        // between covers, and each cover starts its entrance afresh.
+        if model.warning != nil {
+            // Start on a whole second so the countdown ticks in step with the clock.
+            let start = Date(timeIntervalSinceReferenceDate: Date().timeIntervalSinceReferenceDate.rounded(.down))
+            TimelineView(.periodic(from: start, by: 1)) { timeline in
+                if let warning = model.warning {
+                    let now = model.time(for: timeline.date)
+                    TakeoverContent(
+                        detail: warning.detail(at: now, in: model.timeZone),
+                        urgency: warning.urgency,
+                        period: warning.window.event.prayer,
+                        sun: warning.sunHeight(at: now),
+                        onPrayed: { model.setPrayed(true, for: warning.window.event) })
+                }
             }
         }
     }
@@ -161,6 +165,7 @@ struct TakeoverContent: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.5)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
                 .opacity(isArranged ? 1 : 0)
                 .offset(y: isArranged ? 0 : 12)
                 .animation(.easeOut(duration: 0.6).delay(0.35), value: isArranged)
@@ -217,7 +222,8 @@ struct HoldToConfirmButton: View {
             VStack(spacing: 4) {
                 Image(systemName: "checkmark")
                     .font(.system(size: 26, weight: .bold))
-                    .symbolEffect(.bounce, value: isDone)
+                    // The value never changes under Reduce Motion, so the tick does not bounce.
+                    .symbolEffect(.bounce, value: isDone && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
                 Text(title)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
             }
