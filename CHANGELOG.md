@@ -2,6 +2,12 @@
 
 What changed in each version of Namaz, newest first.
 
+## 1.2.1 (7 October 2026)
+
+- **No more quitting at midnight.** The app could close by itself when the day changed, and take
+  the island with it until you opened it again. It now keeps running through midnight, and when
+  the clock or time zone changes.
+
 ## 1.2.0 (6 October 2026)
 
 - **Mark a prayer as prayed.** Press **Prayed** on the island, the card or the menu bar popover,
