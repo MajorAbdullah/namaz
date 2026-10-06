@@ -73,6 +73,28 @@ extension PrayerSchedule {
     }
 }
 
+/// How long the end-of-time alerts are kept quiet.
+public enum PauseLength: Sendable {
+    case hour
+    /// Until the next Fajr, when a new day of prayers begins.
+    case restOfToday
+    case days(Int)
+
+    /// When the pause ends. Rounded up to the minute, because the end is shown to the minute.
+    public func end(from now: Date, schedule: PrayerSchedule?) -> Date {
+        let end: Date
+        switch self {
+        case .hour:
+            end = now + 3600
+        case .restOfToday:
+            end = schedule?.events.first { $0.prayer == .fajr && $0.time > now }?.time ?? now + 86_400
+        case .days(let days):
+            end = now + Double(days) * 86_400
+        }
+        return Date(timeIntervalSinceReferenceDate: (end.timeIntervalSinceReferenceDate / 60).rounded(.up) * 60)
+    }
+}
+
 /// The prayers the user has marked as prayed.
 public struct PrayedLog: Codable, Equatable, Sendable {
     /// One entry per prayer, such as "2026-10-05/asr". The date is zero-padded, so entries

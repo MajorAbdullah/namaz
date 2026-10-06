@@ -152,4 +152,37 @@ import Testing
         let restored = try JSONDecoder().decode(PrayedLog.self, from: JSONEncoder().encode(log))
         #expect(restored == log)
     }
+
+    // MARK: - Pausing
+
+    private func isWholeMinute(_ date: Date) -> Bool {
+        date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 60) == 0
+    }
+
+    @Test func anHourPauseEndsOnAMinuteAtLeastAnHourAway() throws {
+        let (schedule, now) = try schedule(at: "14:00")
+        let end = PauseLength.hour.end(from: now + 20, schedule: schedule)
+        #expect(isWholeMinute(end))
+        #expect(end >= now + 20 + 3600)
+        #expect(end < now + 20 + 3600 + 60)
+    }
+
+    @Test func pausingForTheRestOfTodayLastsUntilTheNextFajr() throws {
+        let (schedule, now) = try schedule(at: "14:00")
+        #expect(PauseLength.restOfToday.end(from: now, schedule: schedule) == schedule.tomorrow.fajr)
+    }
+
+    @Test func pausingForDaysCountsWholeDaysAndRoundsUpToTheMinute() throws {
+        let (schedule, now) = try schedule(at: "14:00")
+        let end = PauseLength.days(3).end(from: now + 20, schedule: schedule)
+        #expect(isWholeMinute(end))
+        #expect(end >= now + 20 + 3 * 86_400)
+        #expect(end < now + 20 + 3 * 86_400 + 60)
+    }
+
+    @Test func withoutAScheduleTheRestOfTodayIsADay() {
+        // On a minute exactly, so the rounding does not move it.
+        let now = Date(timeIntervalSinceReferenceDate: 812_000_040)
+        #expect(PauseLength.restOfToday.end(from: now, schedule: nil) == now + 86_400)
+    }
 }

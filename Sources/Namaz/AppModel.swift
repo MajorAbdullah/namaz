@@ -284,11 +284,11 @@ final class AppModel: ObservableObject {
         guard updated != warning else { return }
 
         // A step up is worth a sound; easing off is not. Another prayer's warning starts again
-        // from calm, so its first stage sounds too.
+        // from calm, so its first stage sounds too. Not over the adhan, which is already sounding.
         let previous = warning?.window == updated?.window ? warning?.urgency ?? .calm : .calm
         if let updated, updated.urgency > previous {
             Log.info("Warning: \(updated.title(in: timeZone)), stage \(updated.urgency)")
-            playChime()
+            if ringing == nil { playChime() }
         }
         warning = updated
     }
@@ -301,29 +301,9 @@ final class AppModel: ObservableObject {
         refresh()
     }
 
-    enum PauseLength {
-        case hour
-        /// Until the next Fajr, when a new day of prayers begins.
-        case restOfToday
-        case days(Int)
-    }
-
     /// Keeps the end-of-time alerts quiet for a while. They come back by themselves.
     func pauseAlerts(_ length: PauseLength) {
-        let now = self.now
-        // Rounded up to the minute, because the end is shown to the minute.
-        func wholeMinute(_ date: Date) -> Date {
-            Date(timeIntervalSinceReferenceDate: (date.timeIntervalSinceReferenceDate / 60).rounded(.up) * 60)
-        }
-        switch length {
-        case .hour:
-            settings.alertsPausedUntil = wholeMinute(now + 3600)
-        case .restOfToday:
-            let nextFajr = schedule?.events.first { $0.prayer == .fajr && $0.time > now }?.time
-            settings.alertsPausedUntil = wholeMinute(nextFajr ?? now + 86_400)
-        case .days(let days):
-            settings.alertsPausedUntil = wholeMinute(now + Double(days) * 86_400)
-        }
+        settings.alertsPausedUntil = length.end(from: now, schedule: schedule)
     }
 
     func resumeAlerts() {
