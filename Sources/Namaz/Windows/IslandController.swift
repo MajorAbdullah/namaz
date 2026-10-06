@@ -1,25 +1,31 @@
 import AppKit
 import Combine
+import NamazCore
 import SwiftUI
 
 /// The island's window: pinned to the top centre of the screen with the notch (or, failing that,
-/// the screen in use), opening when the pointer is over it or an alarm is ringing.
+/// the screen in use), opening when the pointer is over it, an alarm is ringing, or a prayer's
+/// time has just come closer to running out.
 @MainActor
 final class IslandController {
     /// Without a notch the island is a pill that hangs this far below the menu bar.
     private static let pillHeight: CGFloat = 30
     private static let pillGap: CGFloat = 6
     private static let spring = Animation.spring(response: 0.36, dampingFraction: 0.82)
+    /// How long the island stays open by itself when an end-of-time warning steps up.
+    private static let peekDuration = Duration.seconds(6)
 
     private let model: AppModel
     let panel = FloatingPanel()
     private let state = IslandState()
     private var observers = Set<AnyCancellable>()
     private var shrink: Task<Void, Never>?
+    private var peek: Task<Void, Never>?
 
     private var isVisible = false
     private var isHovering = false
     private var isRinging = false
+    private var isPeeking = false
 
     init(model: AppModel, actions: AppActions) {
         self.model = model
@@ -57,11 +63,33 @@ final class IslandController {
             }
             .store(in: &observers)
 
+        // A warning that begins or grows more urgent opens the island for a moment, so the
+        // change of colour is not missed.
+        model.$warning
+            .map { $0?.urgency ?? .calm }
+            .removeDuplicates()
+            .scan((Urgency.calm, Urgency.calm)) { ($0.1, $1) }
+            .filter { before, after in after > before }
+            .sink { [weak self] _ in self?.peekOpen() }
+            .store(in: &observers)
+
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .map { _ in }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.update() }
             .store(in: &observers)
+    }
+
+    private func peekOpen() {
+        isPeeking = true
+        update()
+        peek?.cancel()
+        peek = Task { [weak self] in
+            try? await Task.sleep(for: Self.peekDuration)
+            guard !Task.isCancelled, let self else { return }
+            self.isPeeking = false
+            self.update()
+        }
     }
 
     /// The screen with a notch if there is one, since that is where an island belongs.
@@ -96,7 +124,7 @@ final class IslandController {
         let collapsedFrame = frame(for: metrics.collapsedSize, on: screen)
         shrink?.cancel()
 
-        if isHovering || isRinging {
+        if isHovering || isRinging || isPeeking {
             // Make room first, then let the island grow into it.
             panel.setFrame(expandedFrame, display: true)
             if !state.isExpanded {

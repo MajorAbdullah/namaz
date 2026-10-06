@@ -41,6 +41,14 @@ struct AppSettings: Codable, Equatable, Sendable {
     /// Minutes of advance warning before each alarmed prayer. Zero turns reminders off.
     var reminderMinutes: Int
 
+    /// Colour, chimes and the screen cover as an unprayed prayer's time runs out.
+    var endOfTimeAlerts: Bool
+    /// Covers every screen from ten minutes before a prayer's deadline until it is marked as
+    /// prayed or its time ends. For Asr that is from 30 minutes before Maghrib until Maghrib.
+    var endOfTimeCover: Bool
+    /// End-of-time alerts keep quiet until this instant. Nil, or in the past, means not paused.
+    var alertsPausedUntil: Date?
+
     var showsWidget: Bool
     var widgetLayout: WidgetLayout
     var widgetFloatsOnTop: Bool
@@ -60,6 +68,9 @@ struct AppSettings: Codable, Equatable, Sendable {
             alarmSound: .adhan,
             alarmVolume: 1,
             reminderMinutes: 0,
+            endOfTimeAlerts: true,
+            endOfTimeCover: true,
+            alertsPausedUntil: nil,
             showsWidget: true,
             widgetLayout: .island,
             widgetFloatsOnTop: false,
@@ -74,6 +85,10 @@ struct AppSettings: Codable, Equatable, Sendable {
 
     var reminderLead: TimeInterval? {
         reminderMinutes > 0 ? Double(reminderMinutes) * 60 : nil
+    }
+
+    func alertsArePaused(at date: Date) -> Bool {
+        alertsPausedUntil.map { date < $0 } ?? false
     }
 }
 
@@ -95,6 +110,9 @@ extension AppSettings {
         read(.alarmSound, into: &settings.alarmSound)
         read(.alarmVolume, into: &settings.alarmVolume)
         read(.reminderMinutes, into: &settings.reminderMinutes)
+        read(.endOfTimeAlerts, into: &settings.endOfTimeAlerts)
+        read(.endOfTimeCover, into: &settings.endOfTimeCover)
+        settings.alertsPausedUntil = try? container.decodeIfPresent(Date.self, forKey: .alertsPausedUntil)
         read(.showsWidget, into: &settings.showsWidget)
         read(.widgetLayout, into: &settings.widgetLayout)
         read(.widgetFloatsOnTop, into: &settings.widgetFloatsOnTop)
@@ -110,6 +128,24 @@ extension AppSettings {
               let settings = try? JSONDecoder().decode(AppSettings.self, from: data)
         else { return .defaults() }
         return settings
+    }
+
+    func save(to defaults: UserDefaults = .standard) {
+        guard let data = try? JSONEncoder().encode(self) else { return }
+        defaults.set(data, forKey: Self.storageKey)
+    }
+}
+
+/// The prayed marks are kept beside the settings but apart from them: they are a record of
+/// what happened, not something the user sets.
+extension PrayedLog {
+    private static let storageKey = "prayed"
+
+    static func load(from defaults: UserDefaults = .standard) -> PrayedLog {
+        guard let data = defaults.data(forKey: storageKey),
+              let log = try? JSONDecoder().decode(PrayedLog.self, from: data)
+        else { return PrayedLog() }
+        return log
     }
 
     func save(to defaults: UserDefaults = .standard) {

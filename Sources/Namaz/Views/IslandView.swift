@@ -18,7 +18,7 @@ struct IslandMetrics: Equatable {
     }
 
     func expandedSize(ringing: Bool) -> CGSize {
-        CGSize(width: max(collapsedSize.width, 400), height: barHeight + (ringing ? 148 : 126))
+        CGSize(width: max(collapsedSize.width, 400), height: barHeight + (ringing ? 148 : 134))
     }
 }
 
@@ -31,7 +31,8 @@ final class IslandState: ObservableObject {
 
 /// A black island at the top of the screen, in the manner of the iPhone's Dynamic Island: at
 /// rest it shows the next prayer and a countdown either side of the notch, and it opens into
-/// the day's timetable when pointed at, or when an alarm rings.
+/// the day's timetable when pointed at, or when an alarm rings. While an unprayed prayer's time
+/// runs out it shows that prayer instead, counting down to its deadline in the warning's colour.
 struct IslandView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var state: IslandState
@@ -43,9 +44,10 @@ struct IslandView: View {
             IslandContent(
                 content: CardContent.make(
                     schedule: model.schedule, settings: model.settings, ringing: model.ringing,
-                    now: model.time(for: timeline.date), timeZone: model.timeZone),
+                    prayed: model.prayed, now: model.time(for: timeline.date), timeZone: model.timeZone),
                 metrics: state.metrics,
                 isExpanded: state.isExpanded,
+                onPrayed: { model.setPrayed(true, for: $0) },
                 onStop: { model.stopAlarm() })
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -56,6 +58,7 @@ struct IslandContent: View {
     let content: CardContent
     let metrics: IslandMetrics
     let isExpanded: Bool
+    var onPrayed: (PrayerEvent) -> Void = { _ in }
     var onStop: () -> Void = {}
 
     private var isRinging: Bool {
@@ -76,7 +79,8 @@ struct IslandContent: View {
             bottomTrailingRadius: bottom, topTrailingRadius: top, style: .continuous)
     }
 
-    private var accent: Color { SkyTheme(period: content.period).glow }
+    /// The colour of the part of the day, or of the warning while there is one.
+    private var accent: Color { content.urgency.color ?? SkyTheme(period: content.period).glow }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -91,21 +95,37 @@ struct IslandContent: View {
         .frame(width: size.width, height: size.height, alignment: .top)
         .foregroundStyle(.white)
         .background(.black)
+        .overlay(alignment: .bottom) {
+            // Light spilling from under the island, in the colour of the time left.
+            if let color = content.urgency.color {
+                LinearGradient(colors: [color.opacity(0), color.opacity(0.7)], startPoint: .top, endPoint: .bottom)
+                    .frame(height: 12)
+                    .modifier(Breathe(urgency: content.urgency))
+                    .allowsHitTesting(false)
+            }
+        }
         .clipShape(shape)
         .environment(\.colorScheme, .dark)
     }
 
     /// The always-visible strip: what is next on the left, how long until it on the right, with
-    /// the notch (if any) between them.
+    /// the notch (if any) between them. During a warning, the prayer whose time is running out
+    /// and how long is left of it.
     @ViewBuilder
     private var bar: some View {
         HStack(spacing: 0) {
             HStack(spacing: 6) {
                 switch content.headline {
                 case .upcoming(let title, _):
-                    Image(systemName: content.rows.first { $0.state == .next }?.prayer.symbolName ?? "moon.stars.fill")
+                    Image(systemName: content.warning != nil
+                        ? content.urgency.symbolName
+                        : content.rows.first { $0.state == .next }?.prayer.symbolName ?? "moon.stars.fill")
                         .foregroundStyle(accent)
-                    Text(title)
+                        .contentTransition(.symbolEffect(.replace))
+                        .symbolEffect(.bounce, value: content.urgency)
+                    // During a warning, only the prayer's name: the hourglass and the colour say
+                    // the rest, and a longer title would run under the notch.
+                    Text(content.warning != nil ? content.openTitle ?? title : title)
                 case .ringing(let title, _):
                     Image(systemName: "bell.and.waves.left.and.right.fill")
                         .foregroundStyle(accent)
@@ -120,7 +140,12 @@ struct IslandContent: View {
             Spacer(minLength: 8)
             Group {
                 switch content.headline {
-                case .upcoming: Text(Countdown.precise(content.remaining)).monospacedDigit()
+                case .upcoming:
+                    Text(Countdown.precise(content.remaining))
+                        .monospacedDigit()
+                        .foregroundStyle(content.urgency.color ?? .white)
+                        .contentTransition(.numericText(countsDown: true))
+                        .animation(.snappy, value: Int(content.remaining.rounded(.up)))
                 case .ringing: Text("now")
                 case .unavailable: Text("No times")
                 }
@@ -139,12 +164,21 @@ struct IslandContent: View {
             case .upcoming(_, let caption):
                 HStack {
                     Text(caption)
+                        .opacity(0.65)
+                        .layoutPriority(1)
                     Spacer(minLength: 8)
-                    Text("\(content.placeName) · \(content.hijriDate)")
+                    // The button needs the room the place name would take.
+                    Text(content.open == nil ? "\(content.placeName) · \(content.hijriDate)" : content.hijriDate)
+                        .opacity(0.65)
+                    if let open = content.open {
+                        PrayedButton(prayer: content.openTitle ?? open.prayer.name, isUrgent: content.warning != nil) {
+                            onPrayed(open)
+                        }
+                            .layoutPriority(1)
+                    }
                 }
                 .font(.system(size: 11.5, weight: .medium))
                 .lineLimit(1)
-                .opacity(0.65)
                 ProgressBar(value: content.progress, tint: accent)
                     .padding(.top, 8)
             case .ringing(let title, let caption):

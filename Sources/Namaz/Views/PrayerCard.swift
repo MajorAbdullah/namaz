@@ -14,11 +14,17 @@ struct CardContent {
         enum State { case past, current, next, upcoming }
 
         let prayer: Prayer
+        /// The occurrence a mark on this row is for. Not always the one whose time the row
+        /// shows: see `CardContent.make`.
+        let event: PrayerEvent
         let title: String
         let time: String
         let shortTime: String
         let state: State
         let alarmOn: Bool
+        let isPrayed: Bool
+        /// True once a prayer has begun, when it can be marked as prayed or unmarked.
+        let canMarkPrayed: Bool
 
         var id: Prayer { prayer }
     }
@@ -28,17 +34,27 @@ struct CardContent {
     /// The part of the day we are in, which picks the backdrop.
     var period: Prayer?
     var headline: Headline
-    /// Seconds until the next event.
+    /// Seconds on the countdown: to the next event, or to the deadline while a warning shows.
     var remaining: TimeInterval
     /// How far we are from the previous event to the next, 0 to 1.
     var progress: Double
     var rows: [Row]
+    /// The prayer whose time is open and which has not been marked as prayed.
+    var open: PrayerEvent?
+    /// That prayer's name as the user knows it, so Friday's Dhuhr is Jumu'ah. Short enough for
+    /// the island's narrow wings, where a warning's full title would run under the notch.
+    var openTitle: String?
+    /// Set while that prayer is close to its deadline.
+    var warning: PrayerWarning?
+
+    var urgency: Urgency { warning?.urgency ?? .calm }
 
     @MainActor
     static func make(
         schedule: PrayerSchedule?,
         settings: AppSettings,
         ringing: PrayerEvent?,
+        prayed: PrayedLog = PrayedLog(),
         now: Date,
         timeZone: TimeZone
     ) -> CardContent {
@@ -57,6 +73,7 @@ struct CardContent {
         content.period = current?.prayer
         content.remaining = next.time.timeIntervalSince(now)
         content.progress = schedule.progress(at: now)
+        let window = schedule.window(at: now)
         content.rows = schedule.displayDay(at: now).events.map { event in
             let state: Row.State
             if event == next {
@@ -66,13 +83,31 @@ struct CardContent {
             } else {
                 state = event.time <= now ? .past : .upcoming
             }
+            // The open prayer can belong to a day other than the one shown, as Isha does once
+            // the timetable has moved on. Its row stands for it, so its mark can still be changed.
+            let marked = window.flatMap { $0.event.prayer == event.prayer ? $0.event : nil } ?? event
+            let canMarkPrayed = marked.prayer.isPrayer && marked.time <= now
             return Row(
                 prayer: event.prayer,
+                event: marked,
                 title: event.title(in: timeZone),
                 time: format.time(event.time),
                 shortTime: format.shortTime(event.time),
                 state: state,
-                alarmOn: settings.alarmPrayers.contains(event.prayer))
+                alarmOn: settings.alarmPrayers.contains(event.prayer),
+                // Only a prayer that has begun can have been marked, which saves looking up the rest.
+                isPrayed: canMarkPrayed && prayed.contains(marked, in: timeZone),
+                canMarkPrayed: canMarkPrayed)
+        }
+        if let window {
+            let isPrayed = content.rows.first { $0.event == window.event }?.isPrayed
+                ?? prayed.contains(window.event, in: timeZone)
+            if !isPrayed {
+                content.open = window.event
+                content.openTitle = window.event.title(in: timeZone)
+            }
+            content.warning = PrayerWarning.current(
+                window: window, isPrayed: isPrayed, settings: settings, now: now)
         }
 
         if let ringing {
@@ -81,6 +116,17 @@ struct CardContent {
                 caption: ringing.prayer.isPrayer
                     ? "It's time to pray · \(format.time(ringing.time))"
                     : "Fajr has ended · \(format.time(ringing.time))")
+        } else if let warning = content.warning {
+            // The countdown now runs to the deadline, and the words say what is at stake.
+            content.remaining = warning.countdownTarget.timeIntervalSince(now)
+            let nextUp = "\(next.title(in: timeZone)) · \(format.time(next.time))"
+            content.headline = .upcoming(
+                title: warning.title(in: timeZone),
+                caption: warning.isOverdue
+                    ? nextUp
+                    : warning.hasEarlyDeadline
+                        ? "Best time ends \(format.time(warning.window.deadline))"
+                        : "Then \(nextUp)")
         } else {
             content.headline = .upcoming(
                 title: next.title(in: timeZone),
@@ -97,6 +143,7 @@ struct PrayerCard: View {
     let content: CardContent
     let layout: AppSettings.WidgetLayout
     var onToggleAlarm: (Prayer) -> Void = { _ in }
+    var onSetPrayed: (PrayerEvent, Bool) -> Void = { _, _ in }
     var onStop: () -> Void = {}
 
     static let cornerRadius: CGFloat = 24
@@ -114,7 +161,8 @@ struct PrayerCard: View {
             header
             headline
                 .padding(.top, 10)
-            ProgressBar(value: content.progress)
+            ProgressBar(value: content.progress, tint: content.urgency.color ?? .white)
+                .animation(.easeInOut(duration: 0.6), value: content.urgency)
                 .padding(.top, 10)
             if !content.rows.isEmpty {
                 timetable
@@ -156,20 +204,25 @@ struct PrayerCard: View {
                     Text(title)
                         .font(titleFont)
                     Spacer(minLength: 0)
-                    Text(Countdown.precise(content.remaining))
-                        .font(titleFont.weight(.semibold))
-                        .monospacedDigit()
+                    countdown(font: titleFont)
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 HStack {
                     Text(caption)
+                        .opacity(0.8)
                     Spacer(minLength: 8)
-                    Text("remaining")
+                    if let open = content.open {
+                        PrayedButton(prayer: content.openTitle ?? open.prayer.name, isUrgent: content.warning != nil) {
+                            onSetPrayed(open, true)
+                        }
+                    } else {
+                        Text("remaining")
+                            .opacity(0.8)
+                    }
                 }
                 .font(.system(size: 12, weight: .medium))
                 .lineLimit(1)
-                .opacity(0.8)
             }
         case .ringing(let title, let caption):
             HStack(spacing: 8) {
@@ -193,6 +246,34 @@ struct PrayerCard: View {
             Text("Prayer times can't be worked out here today. The sun doesn't rise or set at this latitude.")
                 .font(.system(size: 13, weight: .medium))
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// The countdown, which sits in a smoked chip with an hourglass while time runs short. The
+    /// chip is what lets the warning's colour read on every sky: laid straight on the sky, gold
+    /// over midday blue turns olive.
+    @ViewBuilder
+    private func countdown(font: Font) -> some View {
+        let digits = Text(Countdown.precise(content.remaining))
+            .font(font.weight(.semibold))
+            .monospacedDigit()
+            .contentTransition(.numericText(countsDown: true))
+            .animation(.snappy, value: Int(content.remaining.rounded(.up)))
+        if let color = content.urgency.color {
+            HStack(spacing: 6) {
+                Image(systemName: content.urgency.symbolName)
+                    .font(.system(size: 17, weight: .semibold))
+                    .contentTransition(.symbolEffect(.replace))
+                    .symbolEffect(.bounce, value: content.urgency)
+                    .modifier(Breathe(urgency: content.urgency))
+                digits
+            }
+            .foregroundStyle(color)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 1)
+            .background(Palette.nightInk.opacity(0.5), in: Capsule())
+        } else {
+            digits
         }
     }
 
@@ -232,6 +313,25 @@ struct PrayerCard: View {
             Text(row.time)
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .monospacedDigit()
+            if row.canMarkPrayed {
+                Button {
+                    onSetPrayed(row.event, !row.isPrayed)
+                } label: {
+                    Image(systemName: row.isPrayed ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 14, weight: .medium))
+                        .contentTransition(.symbolEffect(.replace))
+                        .symbolEffect(.bounce, value: row.isPrayed)
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .opacity(row.isPrayed ? 1 : 0.6)
+                .help(row.isPrayed ? "Prayed. Click to unmark." : "Click to mark as prayed.")
+                .accessibilityLabel(row.isPrayed ? "\(row.title) prayed. Unmark." : "Mark \(row.title) as prayed")
+            } else {
+                // Keeps the times in one column on the rows that cannot be ticked.
+                Color.clear.frame(width: 24, height: 24)
+            }
             Button {
                 onToggleAlarm(row.prayer)
             } label: {
@@ -288,6 +388,17 @@ struct TimesStrip: View {
                     .padding(5)
             }
         }
+        // The other top corner, so a prayer that is prayed and has its alarm off shows both.
+        .overlay(alignment: .topLeading) {
+            if row.isPrayed {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 9, weight: .bold))
+                    .padding(4)
+                    .transition(.scale.combined(with: .opacity))
+                    .accessibilityLabel("Prayed")
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.6), value: row.isPrayed)
         .modifier(RowHighlight(state: row.state))
         .help(row.alarmOn ? "\(row.title) at \(row.time)" : "\(row.title) at \(row.time), alarm off")
     }
@@ -351,9 +462,10 @@ struct LiveCard: View {
             PrayerCard(
                 content: CardContent.make(
                     schedule: model.schedule, settings: model.settings, ringing: model.ringing,
-                    now: model.time(for: timeline.date), timeZone: model.timeZone),
+                    prayed: model.prayed, now: model.time(for: timeline.date), timeZone: model.timeZone),
                 layout: layout,
                 onToggleAlarm: { model.toggleAlarm(for: $0) },
+                onSetPrayed: { model.setPrayed($1, for: $0) },
                 onStop: { model.stopAlarm() })
         }
     }

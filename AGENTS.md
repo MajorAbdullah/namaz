@@ -63,10 +63,17 @@ layer that connects that logic to timers, sound and windows.
 - **The panels never become the key window**, so that clicking the island or card does not take
   keyboard focus from the user's work. Two consequences: buttons need a hosting view that
   accepts the first click (`ClickThroughHostingView`), and SwiftUI's `.onHover` does not fire,
-  which is why the island tracks the pointer itself (`HoverTrackingHostingView`).
+  which is why the island tracks the pointer itself (`HoverTrackingHostingView`). The screen
+  cover (`CoverPanel`) is the one exception: it takes the keyboard on purpose while it is up,
+  and hands it back when it goes.
 - **Rebuilding changes the app's identity.** It is ad-hoc signed, so after each rebuild macOS
   asks again about location and notifications.
 - **The panel tests put real windows on screen** for a second or two. That is expected.
+- **The screen cover really covers the screen.** Starting the clock within ten minutes of a
+  prayer's deadline (see below) brings it up at once. Asr's deadline is 20 minutes before
+  Maghrib, and its cover stays until Maghrib, so the Maghrib example below lands in it. Hold
+  Prayed for three seconds, or press ⌘Q, which the app reserves system-wide while the cover is
+  showing.
 
 ## Trying changes without waiting for a prayer time
 

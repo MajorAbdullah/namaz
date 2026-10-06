@@ -60,9 +60,73 @@ enum UIDump {
             }
         }
 
+        // An end-of-time warning at each stage, at moments taken from the day's own times.
+        func content(at date: Date, prayed: PrayedLog = PrayedLog()) -> CardContent? {
+            guard let schedule = PrayerSchedule(
+                around: date, at: settings.place.coordinates,
+                timeZone: timeZone, configuration: settings.calculation)
+            else { return nil }
+            return CardContent.make(
+                schedule: schedule, settings: settings, ringing: nil,
+                prayed: prayed, now: date, timeZone: timeZone)
+        }
+        if let today = model.schedule?.today {
+            let warnings = [
+                ("warning-20", today.asr - 18 * 60), ("warning-15", today.asr - 13 * 60),
+                ("warning-5", today.asr - 3 * 60), ("warning-asr", today.maghrib - 27 * 60),
+                ("warning-asr-overdue", today.maghrib - 12 * 60),
+                ("warning-maghrib-5", today.isha - 3 * 60), ("warning-isha-10", today.fajr - 8 * 60),
+            ]
+            for (name, date) in warnings {
+                guard let content = content(at: date) else { continue }
+                await save(PrayerCard(content: content, layout: .compact), as: "card-compact-\(name)", in: directory)
+                await save(IslandContent(content: content, metrics: notch, isExpanded: false),
+                           as: "island-notch-\(name)-collapsed", in: directory)
+                await save(IslandContent(content: content, metrics: notch, isExpanded: true),
+                           as: "island-notch-\(name)-expanded", in: directory)
+            }
+
+            var prayed = PrayedLog()
+            prayed.set(true, for: PrayerEvent(prayer: .fajr, time: today.fajr), in: timeZone)
+            prayed.set(true, for: PrayerEvent(prayer: .dhuhr, time: today.dhuhr), in: timeZone)
+            if let content = content(at: today.asr + 30 * 60, prayed: prayed) {
+                await save(PrayerCard(content: content, layout: .list), as: "card-list-prayed", in: directory)
+                await save(PrayerCard(content: content, layout: .compact), as: "card-compact-prayed", in: directory)
+            }
+        }
+
+        // The screen cover on the sky of several prayers, with the sun at different heights.
+        let covers: [(String, Urgency, Prayer, Double, String)] = [
+            ("cover-dhuhr-10", .ten, .dhuhr, 0.97, "Dhuhr ends in 9:42"),
+            ("cover-dhuhr-5", .five, .dhuhr, 0.4, "Dhuhr ends in 4:00"),
+            ("cover-asr-10", .ten, .asr, 0.8, "Best time for Asr ends in 8:00"),
+            ("cover-asr-overdue", .five, .asr, -0.35, "Maghrib is in 13:00. Pray Asr now."),
+            ("cover-maghrib-5", .five, .maghrib, 0.2, "Maghrib ends in 2:00"),
+            ("cover-isha-10", .ten, .isha, 0.6, "Isha ends in 6:00"),
+        ]
+        for (name, urgency, period, sun, detail) in covers {
+            await save(
+                TakeoverContent(
+                    detail: detail, urgency: urgency, period: period, sun: sun,
+                    entrance: false, onPrayed: {})
+                    .frame(width: 1440, height: 900),
+                as: name, in: directory)
+        }
+        // As it is when ⌘Q could not be reserved.
+        await save(
+            TakeoverContent(
+                detail: "Dhuhr ends in 9:42", urgency: .ten, period: .dhuhr, sun: 0.97,
+                entrance: false, onPrayed: {}, onQuit: {})
+                .frame(width: 1440, height: 900),
+            as: "cover-quit", in: directory)
+
         let actions = AppActions(openSettings: {}, quit: {})
         await save(PopoverView(model: model, actions: actions), as: "popover", in: directory,
                    background: .windowBackgroundColor)
+        model.pauseAlerts(.hour)
+        await save(PopoverView(model: model, actions: actions), as: "popover-paused", in: directory,
+                   background: .windowBackgroundColor)
+        model.resumeAlerts()
         // Show one adjusted prayer, so the picture covers that row's extra controls.
         model.settings.calculation.adjustments[.dhuhr] = 69
         for tab in SettingsView.Tab.allCases {
