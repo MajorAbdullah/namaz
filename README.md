@@ -88,10 +88,10 @@ without notifications the alarm still rings and still shows on screen.
   have prayed, and a tick appears beside that prayer. In the popover you can tick or untick any
   prayer that has started.
 - **End-of-time alerts** for a prayer you have not marked. From 20 minutes before its time ends
-  the island and card turn amber and pulse, then orange at 15. For the last 10 minutes every
-  screen is covered with "Prayer is better than work." until you press and hold **Prayed**; it
-  turns red for the last 5. Asr counts down to 20 minutes before Maghrib, and its cover stays
-  until Maghrib.
+  the island and card turn gold and pulse, then amber at 15 and a deeper orange at 10. For the
+  last 10 minutes every screen is covered with "Prayer is better than work." until you press and
+  hold **Prayed**; it turns red for the last 5. Asr counts down to 20 minutes before Maghrib, and
+  its cover stays until Maghrib.
 - The Hijri date, which moves on at Maghrib, and the Qibla bearing.
 
 ## Settings
