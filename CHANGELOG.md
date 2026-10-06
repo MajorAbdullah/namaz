@@ -9,8 +9,9 @@ What changed in each version of Namaz, newest first.
   has started.
 - **A warning as a prayer's time runs out.** For a prayer you have not marked, the island and card
   turn gold 20 minutes before its time ends, then amber at 15, orange at 10 and red at 5. They
-  pulse, a chime sounds at each step, and the menu bar counts down. Asr counts down to 20 minutes
-  before Maghrib, when its time is disliked, not to Maghrib itself.
+  pulse, a chime sounds at each step, and the menu bar counts down, unless you have set it to
+  show only the icon. Asr counts down to 20 minutes before Maghrib, when its time is disliked,
+  not to Maghrib itself.
 - **A cover over the screen for the last 10 minutes.** Every screen is covered with a setting sun
   that sinks as the time runs out. Press and hold **Prayed** for three seconds to clear it, or
   press ⌘Q to quit Namaz. Turn the cover or the alerts off in Settings → Running Out.
