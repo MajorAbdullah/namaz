@@ -110,6 +110,12 @@ final class AppModel: ObservableObject {
     /// Recomputes the schedule, rings anything that has come due, and sets the next wake-up.
     func refresh() {
         let now = self.now
+        // A pause that has run out is cleared, which is what tells the views showing it. Setting
+        // it refreshes again.
+        if let until = settings.alertsPausedUntil, until <= now {
+            settings.alertsPausedUntil = nil
+            return
+        }
         let updated = PrayerSchedule(
             around: now, at: settings.place.coordinates,
             timeZone: timeZone, configuration: settings.calculation)
@@ -285,7 +291,14 @@ final class AppModel: ObservableObject {
 
         // A step up is worth a sound; easing off is not. Another prayer's warning starts again
         // from calm, so its first stage sounds too. Not over the adhan, which is already sounding.
-        let previous = warning?.window == updated?.window ? warning?.urgency ?? .calm : .calm
+        // The same prayer on the same day counts as the same warning even if its times have
+        // been worked out afresh and moved a little, as after a change of place.
+        func day(_ warning: PrayerWarning?) -> CalendarDay? {
+            warning.map { CalendarDay(containing: $0.window.event.time, in: timeZone) }
+        }
+        let isSamePrayer = warning?.window.event.prayer == updated?.window.event.prayer
+            && day(warning) == day(updated)
+        let previous = isSamePrayer ? warning?.urgency ?? .calm : .calm
         if let updated, updated.urgency > previous {
             Log.info("Warning: \(updated.title(in: timeZone)), stage \(updated.urgency)")
             if ringing == nil { playChime() }
@@ -310,13 +323,18 @@ final class AppModel: ObservableObject {
         settings.alertsPausedUntil = nil
     }
 
+    /// When the pause in force ends. Nil when the alerts are not paused.
+    var pauseEnd: Date? {
+        settings.alertsPausedUntil.flatMap { $0 > now ? $0 : nil }
+    }
+
     // MARK: - Menu bar
 
     private func updateMenuBarTitle(at now: Date) {
         let title: String
         if let ringing {
             title = "\(ringing.title(in: timeZone)) now"
-        } else if let warning {
+        } else if let warning, settings.menuBarStyle != .iconOnly {
             title = warning.menuBarTitle(at: now, in: timeZone)
         } else if let next = schedule?.next(after: now) {
             let name = next.title(in: timeZone)

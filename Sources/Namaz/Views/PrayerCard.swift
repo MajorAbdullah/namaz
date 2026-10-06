@@ -14,6 +14,8 @@ struct CardContent {
         enum State { case past, current, next, upcoming }
 
         let prayer: Prayer
+        /// The occurrence a mark on this row is for. Not always the one whose time the row
+        /// shows: see `CardContent.make`.
         let event: PrayerEvent
         let title: String
         let time: String
@@ -71,6 +73,7 @@ struct CardContent {
         content.period = current?.prayer
         content.remaining = next.time.timeIntervalSince(now)
         content.progress = schedule.progress(at: now)
+        let window = schedule.window(at: now)
         content.rows = schedule.displayDay(at: now).events.map { event in
             let state: Row.State
             if event == next {
@@ -80,23 +83,32 @@ struct CardContent {
             } else {
                 state = event.time <= now ? .past : .upcoming
             }
+            // The open prayer can belong to a day other than the one shown, as Isha does once
+            // the timetable has moved on. Its row stands for it, so its mark can still be changed.
+            let marked = window.flatMap { $0.event.prayer == event.prayer ? $0.event : nil } ?? event
+            let canMarkPrayed = marked.prayer.isPrayer && marked.time <= now
             return Row(
                 prayer: event.prayer,
-                event: event,
+                event: marked,
                 title: event.title(in: timeZone),
                 time: format.time(event.time),
                 shortTime: format.shortTime(event.time),
                 state: state,
                 alarmOn: settings.alarmPrayers.contains(event.prayer),
-                isPrayed: prayed.contains(event, in: timeZone),
-                canMarkPrayed: event.prayer.isPrayer && event.time <= now)
+                // Only a prayer that has begun can have been marked, which saves looking up the rest.
+                isPrayed: canMarkPrayed && prayed.contains(marked, in: timeZone),
+                canMarkPrayed: canMarkPrayed)
         }
-        if let window = schedule.window(at: now), !prayed.contains(window.event, in: timeZone) {
-            content.open = window.event
-            content.openTitle = window.event.title(in: timeZone)
+        if let window {
+            let isPrayed = content.rows.first { $0.event == window.event }?.isPrayed
+                ?? prayed.contains(window.event, in: timeZone)
+            if !isPrayed {
+                content.open = window.event
+                content.openTitle = window.event.title(in: timeZone)
+            }
+            content.warning = PrayerWarning.current(
+                window: window, isPrayed: isPrayed, settings: settings, now: now)
         }
-        content.warning = PrayerWarning.current(
-            schedule: schedule, settings: settings, prayed: prayed, now: now, timeZone: timeZone)
 
         if let ringing {
             content.headline = .ringing(
@@ -316,6 +328,9 @@ struct PrayerCard: View {
                 .opacity(row.isPrayed ? 1 : 0.6)
                 .help(row.isPrayed ? "Prayed. Click to unmark." : "Click to mark as prayed.")
                 .accessibilityLabel(row.isPrayed ? "\(row.title) prayed. Unmark." : "Mark \(row.title) as prayed")
+            } else {
+                // Keeps the times in one column on the rows that cannot be ticked.
+                Color.clear.frame(width: 24, height: 24)
             }
             Button {
                 onToggleAlarm(row.prayer)

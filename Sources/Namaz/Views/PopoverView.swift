@@ -57,18 +57,13 @@ struct PopoverView: View {
     /// A way to quieten the end-of-time alerts for a while, or to bring them back.
     private var pauseRow: some View {
         HStack {
-            if let until = model.settings.alertsPausedUntil, until > model.now {
+            if let until = model.pauseEnd {
                 Label("Alerts paused until \(model.clockFormat.timeAndDay(until, relativeTo: model.now))",
                       systemImage: "pause.circle.fill")
                 Spacer()
                 Button("Resume") { model.resumeAlerts() }
             } else {
-                Menu {
-                    Button("For 1 Hour") { model.pauseAlerts(.hour) }
-                    Button("For the Rest of Today") { model.pauseAlerts(.restOfToday) }
-                    Button("For 3 Days") { model.pauseAlerts(.days(3)) }
-                    Button("For 7 Days") { model.pauseAlerts(.days(7)) }
-                } label: {
+                PauseAlertsMenu(model: model) {
                     Label("Pause Alerts", systemImage: "pause.circle")
                 }
                 .menuStyle(.borderlessButton)
@@ -81,6 +76,28 @@ struct PopoverView: View {
         .foregroundStyle(.secondary)
         .buttonStyle(.borderless)
         .padding(.horizontal, 6)
+    }
+}
+
+/// The lengths a pause can have, offered in the popover and in Settings.
+struct PauseAlertsMenu<Title: View>: View {
+    @ObservedObject var model: AppModel
+    let title: Title
+
+    init(model: AppModel, @ViewBuilder title: () -> Title) {
+        self.model = model
+        self.title = title()
+    }
+
+    var body: some View {
+        Menu {
+            Button("For 1 Hour") { model.pauseAlerts(.hour) }
+            Button("For the Rest of Today") { model.pauseAlerts(.restOfToday) }
+            Button("For 3 Days") { model.pauseAlerts(.days(3)) }
+            Button("For 7 Days") { model.pauseAlerts(.days(7)) }
+        } label: {
+            title
+        }
     }
 }
 

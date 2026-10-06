@@ -112,6 +112,13 @@ enum UIDump {
                     .frame(width: 1440, height: 900),
                 as: name, in: directory)
         }
+        // As it is when ⌘Q could not be reserved.
+        await save(
+            TakeoverContent(
+                detail: "Dhuhr ends in 9:42", urgency: .ten, period: .dhuhr, sun: 0.97,
+                entrance: false, onPrayed: {}, onQuit: {})
+                .frame(width: 1440, height: 900),
+            as: "cover-quit", in: directory)
 
         let actions = AppActions(openSettings: {}, quit: {})
         await save(PopoverView(model: model, actions: actions), as: "popover", in: directory,

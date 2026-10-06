@@ -51,6 +51,9 @@ final class TakeoverController {
         panels.dropFirst(screens.count).forEach { $0.orderOut(nil) }
         for (panel, screen) in zip(panels, screens) {
             panel.setFrame(screen.frame, display: true)
+            // If ⌘Q could not be reserved, the cover has to offer the way out itself.
+            (panel.contentView as? ClickThroughHostingView<TakeoverView>)?.rootView =
+                TakeoverView(model: model, offersQuit: !quitHotKey.isReserved)
             // Already up, as when a display changes: the new frame is all it needs.
             if panel.isVisible { continue }
             panel.alphaValue = 0
@@ -94,9 +97,11 @@ final class TakeoverController {
 /// The cover cannot count on having keyboard focus: macOS may leave it with the app the user
 /// was typing in, and an ordinary ⌘Q would then quit that app, out of sight. A hot key reaches
 /// Namaz whichever app is in front. It is the one way out of the cover other than praying, so
-/// if reserving the key fails, holding Prayed still works, and the other way round.
+/// if reserving the key fails, the cover shows a Quit button in its place.
 @MainActor
 private final class QuitHotKey {
+    /// False while held if the system refused the key.
+    private(set) var isReserved = false
     private var hotKey: EventHotKeyRef?
     private var handler: EventHandlerRef?
 
@@ -120,11 +125,13 @@ private final class QuitHotKey {
         let status = RegisterEventHotKey(
             UInt32(kVK_ANSI_Q), UInt32(cmdKey), EventHotKeyID(signature: 0x4E4D_5A51, id: 1),
             GetApplicationEventTarget(), 0, &hotKey)
-        if status != noErr { Log.info("Could not reserve ⌘Q while the screen is covered (\(status))") }
+        isReserved = status == noErr
+        if !isReserved { Log.info("Could not reserve ⌘Q while the screen is covered (\(status))") }
     }
 
     private func release() {
         if let hotKey { UnregisterEventHotKey(hotKey) }
         hotKey = nil
+        isReserved = false
     }
 }

@@ -16,10 +16,20 @@ struct PrayerWarning: Equatable {
         now: Date,
         timeZone: TimeZone
     ) -> PrayerWarning? {
-        guard settings.endOfTimeAlerts, !settings.alertsArePaused(at: now),
-              let window = schedule?.window(at: now),
-              !prayed.contains(window.event, in: timeZone)
-        else { return nil }
+        guard settings.endOfTimeAlerts, let window = schedule?.window(at: now) else { return nil }
+        return current(
+            window: window, isPrayed: prayed.contains(window.event, in: timeZone),
+            settings: settings, now: now)
+    }
+
+    /// The same, for a caller that already knows which prayer is open and whether it is marked.
+    static func current(
+        window: PrayerWindow,
+        isPrayed: Bool,
+        settings: AppSettings,
+        now: Date
+    ) -> PrayerWarning? {
+        guard settings.endOfTimeAlerts, !settings.alertsArePaused(at: now), !isPrayed else { return nil }
         let urgency = window.urgency(at: now)
         guard urgency > .calm else { return nil }
         return PrayerWarning(window: window, urgency: urgency, isOverdue: window.isOverdue(at: now))

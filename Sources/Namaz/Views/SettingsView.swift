@@ -362,19 +362,14 @@ private struct RunningOutSettings: View {
             }
 
             Section {
-                if let until = model.settings.alertsPausedUntil, until > model.now {
+                if let until = model.pauseEnd {
                     LabeledContent("Paused until \(model.clockFormat.timeAndDay(until, relativeTo: model.now))") {
                         Button("Resume") { model.resumeAlerts() }
                     }
                 } else {
                     LabeledContent("Pause for a while") {
-                        Menu("Pause Alerts") {
-                            Button("For 1 Hour") { model.pauseAlerts(.hour) }
-                            Button("For the Rest of Today") { model.pauseAlerts(.restOfToday) }
-                            Button("For 3 Days") { model.pauseAlerts(.days(3)) }
-                            Button("For 7 Days") { model.pauseAlerts(.days(7)) }
-                        }
-                        .fixedSize()
+                        PauseAlertsMenu(model: model) { Text("Pause Alerts") }
+                            .fixedSize()
                     }
                     .disabled(!model.settings.endOfTimeAlerts)
                 }

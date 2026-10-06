@@ -5,6 +5,8 @@ import SwiftUI
 /// What covers the screen for the last minutes of a prayer that has not been marked as prayed.
 struct TakeoverView: View {
     @ObservedObject var model: AppModel
+    /// Shows a Quit button, for when ⌘Q could not be reserved and would reach another app.
+    var offersQuit = false
 
     var body: some View {
         // The timeline lives only while there is a warning, so the hidden panel does no work
@@ -20,7 +22,8 @@ struct TakeoverView: View {
                         urgency: warning.urgency,
                         period: warning.window.event.prayer,
                         sun: warning.sunHeight(at: now),
-                        onPrayed: { model.setPrayed(true, for: warning.window.event) })
+                        onPrayed: { model.setPrayed(true, for: warning.window.event) },
+                        onQuit: offersQuit ? { NSApp.terminate(nil) } : nil)
                 }
             }
         }
@@ -39,7 +42,6 @@ struct TakeoverContent: View {
     static let holdDuration = 3.0
 
     private static let sunRadius: CGFloat = 42
-    private static let buttonSize: CGFloat = 116
 
     let detail: String
     let urgency: Urgency
@@ -52,6 +54,8 @@ struct TakeoverContent: View {
     var entrance = true
     var holdDuration = Self.holdDuration
     let onPrayed: () -> Void
+    /// Set only when ⌘Q is not there to quit with.
+    var onQuit: (() -> Void)?
 
     @ViewState private var hasArrived = false
 
@@ -90,6 +94,16 @@ struct TakeoverContent: View {
                     .opacity(isArranged ? 1 : 0)
                     .animation(.easeOut(duration: 0.5).delay(0.8), value: isArranged)
                     .offset(x: left, y: horizon + 44)
+
+                if let onQuit {
+                    Button("Quit Namaz", action: onQuit)
+                        .buttonStyle(.plain)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .padding(.vertical, 6)
+                        .contentShape(Rectangle())
+                        .offset(x: left, y: horizon + 44 + HoldToConfirmButton.size + 18)
+                }
             }
         }
         .ignoresSafeArea()
@@ -186,7 +200,7 @@ struct TakeoverContent: View {
 /// it is held. Letting go early does nothing. Once it is done it says so for a moment before
 /// acting, so that the person sees their press was taken.
 struct HoldToConfirmButton: View {
-    private static let size: CGFloat = 116
+    static let size: CGFloat = 116
 
     let title: String
     let duration: Double
