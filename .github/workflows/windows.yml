@@ -1,0 +1,79 @@
+name: Windows
+
+# Builds and tests the Windows app. The Mac app is built on the Mac (see AGENTS.md); there is no
+# Mac build here.
+on:
+  pull_request:
+    paths:
+      - "windows/**"
+      - "Resources/Info.plist"
+      - "Resources/Adhan.m4a"
+      - ".github/workflows/windows.yml"
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: windows/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: windows/src-tauri
+
+      - run: npm ci
+
+      # The version lives in Resources/Info.plist; the Windows copies must agree.
+      - run: npm run check-version
+
+      - run: npm run typecheck
+
+      # The prayer maths against the Mac app's own output, the published timetables and the sun.
+      - run: npm test
+
+      # A picture of every view in every state, to look at in the pull request.
+      - run: npx playwright install chromium
+      - run: npm run dump-ui
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-ui-pictures
+          path: windows/ui-dump
+          if-no-files-found: error
+
+      # The shell needs the built pages to compile against.
+      - run: npm run build
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: windows/src-tauri
+      - run: cargo test
+        working-directory: windows/src-tauri
+
+      - run: npm run tauri build
+      - name: Name the installer
+        shell: bash
+        run: |
+          version=$(node -p "require('./package.json').version")
+          mkdir -p ../installer
+          cp src-tauri/target/release/bundle/nsis/*-setup.exe "../installer/Namaz-${version}-windows-setup.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Namaz-windows-installer
+          path: installer/*.exe
+          if-no-files-found: error

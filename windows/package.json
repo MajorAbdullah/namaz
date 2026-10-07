@@ -12,7 +12,9 @@
     "dump-ui": "node scripts/dump-ui.mjs",
     "sync-version": "node scripts/sync-version.mjs",
     "check-version": "node scripts/sync-version.mjs --check",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "predev": "node scripts/copy-assets.mjs",
+    "prebuild": "node scripts/copy-assets.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

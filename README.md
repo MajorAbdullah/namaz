@@ -1,7 +1,7 @@
 # Namaz
 
 Prayer times and alarms for macOS: a menu bar item, an island at the notch (or a card on the
-desktop), and the adhan at each prayer.
+desktop), and the adhan at each prayer. There is also a [Windows version](#namaz-for-windows).
 
 https://github.com/user-attachments/assets/dbe27215-ea5d-4691-a895-f72465700a58
 
@@ -53,6 +53,26 @@ xattr -d com.apple.quarantine ~/Downloads/Namaz-*.dmg
 
 On a Mac managed by a company or school, the administrator may have turned off the option to
 open unverified apps. In that case only they can allow it.
+
+## Namaz for Windows
+
+The same app for Windows 10 and later, in the system tray: the times, the adhan,
+**Prayed** marks, the end-of-time alerts and the screen cover, and the same settings. Differences
+from the Mac: Windows has no notch, so the island is a pill at the top of the screen; a tray icon
+cannot show text, so what the Mac shows in the menu bar is in the icon's tooltip; and **Ctrl+Alt+Q**
+takes the place of ⌘Q as the way out of the screen cover.
+
+1. Download **Namaz-<version>-windows-setup.exe** from the
+   [latest release](https://github.com/MajorAbdullah/namaz/releases/latest).
+2. Run it. It installs for you alone and needs no administrator password.
+3. Open Namaz from the Start menu. Look for its icon in the tray, by the clock.
+
+The first time, Windows SmartScreen will say it protected your PC, because Namaz is not signed
+with a paid certificate. Click **More info**, then **Run anyway**. You only have to do this once.
+
+Namaz needs the Microsoft Edge WebView2 runtime, which is already part of Windows 11 and of
+up-to-date Windows 10. The installer fetches it if it is missing. The Windows app is in
+[`windows/`](windows/); see [AGENTS.md](AGENTS.md) for how to build it.
 
 ## Requirements
 
@@ -197,6 +217,7 @@ licence. It was converted from Ogg to AAC and is otherwise unchanged.
 Sources/NamazCore   Calculation and scheduling. No UI.
 Sources/Namaz       The app: state and alarms, SwiftUI views, AppKit windows.
 Tests               Tests for both.
+windows             The Windows app (Tauri): a TypeScript port of NamazCore, the views, a Rust shell.
 scripts             Bundle builder and icon generator.
 ```
 
