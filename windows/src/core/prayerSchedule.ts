@@ -82,7 +82,7 @@ export class PrayerSchedule {
 
   /** True when the two schedules hold the same times, so a model can skip a redundant update. */
   equals(other: PrayerSchedule | null | undefined): boolean {
-    if (!other) return false;
+    if (!other || other.timeZone !== this.timeZone) return false;
     if (this.events.length !== other.events.length) return false;
     return this.events.every(
       (event, i) => event.prayer === other.events[i].prayer && event.time === other.events[i].time,
