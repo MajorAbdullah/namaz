@@ -112,6 +112,8 @@ h2 { margin: 0 0 12px; font: 600 clamp(28px, 4vw, 38px)/1.15 var(--serif); lette
 .see img { max-width: 100%; height: auto; display: block; filter: drop-shadow(0 18px 40px rgba(0, 0, 0, .45)); }
 .see .island { width: 400px; }
 .see .card { width: 364px; }
+.watch video { width: 100%; height: auto; display: block; aspect-ratio: 16 / 9; background: #000; border-radius: 20px; border: 1px solid var(--line); box-shadow: 0 24px 70px rgba(0, 0, 0, .5); }
+.watch .cap { margin: 14px 0 0; font-size: 14.5px; color: var(--muted); text-align: center; }
 .hold { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 44px; align-items: center; }
 .hold img { width: 100%; height: auto; display: block; border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 24px 70px rgba(0, 0, 0, .5); aspect-ratio: 16 / 10; object-fit: cover; }
 .stages { margin: 0 0 22px; padding: 0; list-style: none; }
@@ -225,6 +227,16 @@ footer .links { display: flex; gap: 20px; }
 </header>
 
 <main class="wrap">
+  <section id="watch" class="watch">
+    <h2>See it in 25 seconds</h2>
+    <p class="sub">The island at the notch counts down to Maghrib, opens, and the adhan begins. Turn your sound on.</p>
+    <video controls preload="none" playsinline poster="namaz-intro.jpg" aria-label="A 25-second film of Namaz on a Mac: the island at the notch counts down to Maghrib, opens, and the adhan plays.">
+      <source src="namaz-intro.mp4" type="video/mp4">
+      Your browser can't play this video. <a href="namaz-intro.mp4">Download it</a>.
+    </video>
+    <p class="cap">Shown on a Mac. On Windows the island is a pill at the top of the screen.</p>
+  </section>
+
   <section id="see">
     <h2>Always there, until it matters</h2>
     <p class="sub">Next to the notch or in the tray, a small island shows the next prayer and the time left. Point at it for the whole day.</p>
