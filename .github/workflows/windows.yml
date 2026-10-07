@@ -49,15 +49,6 @@ jobs:
       # The prayer maths against the Mac app's own output, the published timetables and the sun.
       - run: npm test
 
-      # A picture of every view in every state, to look at in the pull request.
-      - run: npx playwright install chromium
-      - run: npm run dump-ui
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows-ui-pictures
-          path: windows/ui-dump
-          if-no-files-found: error
-
       # The shell needs the built pages to compile against.
       - run: npm run build
       - run: cargo clippy --all-targets -- -D warnings
@@ -76,4 +67,14 @@ jobs:
         with:
           name: Namaz-windows-installer
           path: installer/*.exe
+          if-no-files-found: error
+
+      # A picture of every view in every state, to look at in the pull request. Last, so that a
+      # problem with the pictures never keeps the installer from being built.
+      - run: npx playwright install chromium
+      - run: npm run dump-ui
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-ui-pictures
+          path: windows/ui-dump
           if-no-files-found: error

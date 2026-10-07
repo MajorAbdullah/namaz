@@ -26,7 +26,9 @@ let server;
 let base = option("url");
 if (!base) {
   const port = 1431;
-  server = spawn("npx", ["vite", "--port", String(port), "--strictPort"], { cwd: root, stdio: "ignore" });
+  // Through Node itself, not npx: on Windows npx is a script and cannot be spawned directly.
+  const vite = join(root, "node_modules", "vite", "bin", "vite.js");
+  server = spawn(process.execPath, [vite, "--port", String(port), "--strictPort"], { cwd: root, stdio: "ignore" });
   base = `http://localhost:${port}`;
   for (let i = 0; i < 100; i++) {
     try {
