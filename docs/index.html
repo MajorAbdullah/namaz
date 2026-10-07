@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Namaz: prayer times and the adhan for Mac and Windows</title>
-<meta name="description" content="Namaz shows the prayer times and plays the adhan at each one, from your Mac's menu bar or your Windows tray. Free and open source.">
+<title>Namaz: not just another reminder app. Prayer times and the adhan for Mac and Windows</title>
+<meta name="description" content="Not just another reminder app. Namaz plays the adhan at each prayer, and as a prayer runs out it covers your screen until you have prayed. Free for Mac and Windows.">
 <meta name="theme-color" content="#060a1f">
-<meta property="og:title" content="Namaz: prayer times and the adhan">
-<meta property="og:description" content="Prayer times and the adhan, quietly in your menu bar or tray. Free for Mac and Windows.">
+<meta property="og:title" content="Namaz: not just another reminder app">
+<meta property="og:description" content="It plays the adhan, then holds you to it: as a prayer runs out, your screen asks you to pray. Free for Mac and Windows.">
 <meta property="og:type" content="website">
 <link rel="icon" href="icon.png">
 <style>
@@ -86,6 +86,7 @@ h1 {
   font: 600 clamp(48px, 9vw, 88px)/1 var(--serif);
   letter-spacing: -.02em;
 }
+.kicker { margin: 0 0 14px; font-size: 13px; font-weight: 650; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
 .lede { margin: 0 0 32px; font-size: clamp(18px, 2.4vw, 22px); color: rgba(255, 246, 220, .86); max-width: 30em; }
 .buttons { display: flex; flex-wrap: wrap; gap: 12px; }
 .btn {
@@ -111,6 +112,17 @@ h2 { margin: 0 0 12px; font: 600 clamp(28px, 4vw, 38px)/1.15 var(--serif); lette
 .see img { max-width: 100%; height: auto; display: block; filter: drop-shadow(0 18px 40px rgba(0, 0, 0, .45)); }
 .see .island { width: 400px; }
 .see .card { width: 364px; }
+.hold { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 44px; align-items: center; }
+.hold img { width: 100%; height: auto; display: block; border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 24px 70px rgba(0, 0, 0, .5); aspect-ratio: 16 / 10; object-fit: cover; }
+.stages { margin: 0 0 22px; padding: 0; list-style: none; }
+.stages li { position: relative; margin: 0; padding: 0 0 18px 30px; color: var(--muted); font-size: 16px; line-height: 1.5; }
+.stages li::before { content: ""; position: absolute; left: 3px; top: 7px; width: 11px; height: 11px; border-radius: 50%; background: var(--c); box-shadow: 0 0 12px var(--c); }
+.stages li::after { content: ""; position: absolute; left: 8px; top: 22px; bottom: 2px; width: 1px; background: var(--line); }
+.stages li:last-child { padding-bottom: 0; }
+.stages li:last-child::after { display: none; }
+.stages b { color: var(--text); font-weight: 650; }
+.hold .note { margin: 0; padding: 14px 16px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); color: var(--muted); font-size: 15px; }
+.hold .note strong { color: var(--text); }
 .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
 .feature { padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
 .feature h3 { margin: 0 0 6px; font-size: 17px; }
@@ -163,6 +175,10 @@ footer .row { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: sp
 footer p { margin: 0 0 8px; max-width: 46em; }
 footer .links { display: flex; gap: 20px; }
 
+@media (max-width: 820px) {
+  .hold { grid-template-columns: 1fr; gap: 28px; }
+  .hold img { order: -1; }
+}
 @media (max-width: 640px) {
   nav .links { gap: 14px; }
   .hero-copy { padding-bottom: 150px; }
@@ -197,7 +213,8 @@ footer .links { display: flex; gap: 20px; }
 
   <div class="wrap hero-copy" id="top">
     <h1>Namaz</h1>
-    <p class="lede">Prayer times and the adhan, quietly in your menu bar or tray. It tells you when each prayer begins, and gently when one is running out.</p>
+    <p class="kicker">Not just another reminder app</p>
+    <p class="lede">Namaz plays the adhan at each prayer. Then it stays with you: as a prayer runs out, it covers your screen until you have prayed.</p>
     <div class="buttons">
       <a class="btn primary" id="hero-primary" href="#download">Download</a>
       <a class="btn" id="hero-secondary" href="#download">Other platform</a>
@@ -209,7 +226,7 @@ footer .links { display: flex; gap: 20px; }
 
 <main class="wrap">
   <section id="see">
-    <h2>Always there, never in the way</h2>
+    <h2>Always there, until it matters</h2>
     <p class="sub">Next to the notch or in the tray, a small island shows the next prayer and the time left. Point at it for the whole day.</p>
     <div class="see">
       <img class="island" src="island.png" alt="The island open, showing Dhuhr ending in 13 minutes in amber, with a Prayed button and the day's times" width="400" height="164">
@@ -217,11 +234,28 @@ footer .links { display: flex; gap: 20px; }
     </div>
   </section>
 
+  <section id="hold">
+    <h2>It doesn't just remind you. It holds you to it.</h2>
+    <p class="sub">Most apps ring once and let you swipe it away. Namaz keeps going until you have prayed, and gets harder to ignore as the time runs out.</p>
+    <div class="hold">
+      <div>
+        <ol class="stages">
+          <li style="--c: var(--gold)"><b>20 minutes left.</b> The island turns gold and starts to pulse, with a soft chime.</li>
+          <li style="--c: var(--amber)"><b>15 minutes.</b> Amber, and the pulse quickens.</li>
+          <li style="--c: var(--ember)"><b>10 minutes.</b> Every screen is covered with "Prayer is better than work." There is no snooze and no dismiss.</li>
+          <li style="--c: #de3a4c"><b>5 minutes.</b> Red, with a heartbeat, until you press and hold <strong>Prayed</strong> for three seconds, or the time ends.</li>
+        </ol>
+        <p class="note"><strong>Your choice, not a trap.</strong> You can pause the alerts for an hour or a few days, switch the cover off in Settings, or quit Namaz. It just makes ignoring a prayer something you have to decide to do.</p>
+      </div>
+      <img src="cover.jpg" alt="The screen cover at four minutes left: a red horizon with the sun resting on it, the words Prayer is better than work, and a Prayed button to press and hold" width="1440" height="900" loading="lazy">
+    </div>
+  </section>
+
   <section id="features">
     <div class="features">
       <div class="feature"><h3><span class="dot"></span>The adhan, at each prayer</h3><p>Recorded at Masjid an-Nabawi in Madinah, or choose your own audio file. Optional reminders before each time.</p></div>
       <div class="feature"><h3><span class="dot"></span>Times you can trust</h3><p>Eleven calculation methods, Hanafi or standard Asr, and a time field for every prayer to match your local mosque.</p></div>
-      <div class="feature"><h3><span class="dot"></span>Mark it prayed</h3><p>One tap on <strong>Prayed</strong>. If a prayer is running out, the colours warm from gold to red and a quiet cover reminds you.</p></div>
+      <div class="feature"><h3><span class="dot"></span>Mark it prayed</h3><p>One tap on <strong>Prayed</strong> and a tick appears. Changed your mind? Untick it. Asr counts down to 20 minutes before Maghrib, when delaying it becomes disliked.</p></div>
       <div class="feature"><h3><span class="dot"></span>Yours to keep</h3><p>Free, with no account and no ads. Open source under the MIT licence.</p></div>
     </div>
   </section>
