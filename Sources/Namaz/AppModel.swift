@@ -90,9 +90,10 @@ final class AppModel: ObservableObject {
             center.publisher(for: .NSSystemTimeZoneDidChange),
             center.publisher(for: .NSCalendarDayChanged)
         )
-        .map { _ in }
+        // Hop to the main queue before anything else: macOS posts the day change from a
+        // background thread, and a closure here is main-actor code that traps if entered off it.
         .receive(on: DispatchQueue.main)
-        .sink { [weak self] in self?.clockChanged() }
+        .sink { [weak self] _ in self?.clockChanged() }
         .store(in: &observers)
 
         refresh()

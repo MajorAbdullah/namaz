@@ -46,9 +46,8 @@ final class WidgetPanelController: NSObject, NSWindowDelegate {
             .store(in: &observers)
 
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
-            .map { _ in }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.bringBackOnScreen() }
+            .sink { [weak self] _ in self?.bringBackOnScreen() }
             .store(in: &observers)
     }
 

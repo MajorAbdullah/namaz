@@ -30,9 +30,8 @@ final class TakeoverController {
 
         // A display plugged in while the cover is up must be covered too.
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
-            .map { _ in }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.update() }
+            .sink { [weak self] _ in self?.update() }
             .store(in: &observers)
     }
 
