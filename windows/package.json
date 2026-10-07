@@ -1,7 +1,7 @@
 {
   "name": "namaz-windows",
   "private": true,
-  "version": "1.2.1",
+  "version": "1.3.0",
   "type": "module",
   "description": "Namaz for Windows: prayer times and the adhan, in the system tray.",
   "scripts": {

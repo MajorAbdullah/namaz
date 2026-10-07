@@ -2,6 +2,16 @@
 
 What changed in each version of Namaz, newest first.
 
+## 1.3.0 (8 October 2026)
+
+- **Namaz for Windows.** The same app now runs on Windows 10 and later, from the system tray:
+  the prayer times, the adhan, **Prayed** marks, the end-of-time alerts and the screen cover, and
+  the same settings. Windows has no notch, so the island is a pill at the top of the screen; a
+  tray icon cannot show text, so what the Mac shows in the menu bar is in the icon's tooltip; and
+  **Ctrl+Alt+Q** takes the place of ⌘Q as the way out of the screen cover. Download
+  `Namaz-1.3.0-windows-setup.exe` from the release.
+- The Mac app is unchanged.
+
 ## 1.2.1 (7 October 2026)
 
 - **No more quitting at midnight.** The app could close by itself when the day changed, and take
