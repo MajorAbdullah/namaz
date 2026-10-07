@@ -3,6 +3,8 @@
 Prayer times and alarms for macOS: a menu bar item, an island at the notch (or a card on the
 desktop), and the adhan at each prayer. There is also a [Windows version](#namaz-for-windows).
 
+**Download and help: [majorabdullah.github.io/namaz](https://majorabdullah.github.io/namaz/)**
+
 https://github.com/user-attachments/assets/dbe27215-ea5d-4691-a895-f72465700a58
 
 ## Install
@@ -218,6 +220,7 @@ Sources/NamazCore   Calculation and scheduling. No UI.
 Sources/Namaz       The app: state and alarms, SwiftUI views, AppKit windows.
 Tests               Tests for both.
 windows             The Windows app (Tauri): a TypeScript port of NamazCore, the views, a Rust shell.
+docs                The website (GitHub Pages): one static page, served from main.
 scripts             Bundle builder and icon generator.
 ```
 
