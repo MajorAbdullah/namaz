@@ -18,6 +18,38 @@ make start               # build build/Namaz.app and open it
 
 `make` on its own lists every command. There are no dependencies to fetch.
 
+## Windows
+
+A Windows version lives in `windows/`: a Tauri app, TypeScript in `src/` and a thin Rust shell in
+`src-tauri/`. The Mac app does not depend on it. It needs Node 22; the Rust shell is built by CI
+(`.github/workflows/windows.yml`) and by anyone with Rust installed.
+
+```bash
+cd windows
+npm ci            # once
+npm test          # the prayer maths, the engine, the shell's configuration
+npm run dump-ui   # a picture of every view in ui-dump/ (--channel chrome to use installed Chrome)
+npm run dev       # the pages in a browser: http://localhost:1420/?w=dump lists every scene
+npm run tauri build   # on Windows: the installer, in src-tauri/target/release/bundle/nsis
+```
+
+- `src/core/` is a file-for-file port of `Sources/NamazCore`. Change the Swift maths and the port
+  together, then regenerate the vectors the port is checked against:
+  `NAMAZ_EXPORT_VECTORS=$PWD/windows/src/test/vectors.json make test FILTER=GoldenVectors`.
+  `npm test` must then agree with Swift exactly. Do not loosen the tolerances in
+  `src/test/sunPosition.test.ts` either.
+- `src/app/` is the port of `AppModel`, written so it never touches the operating system
+  (`Platform` in `engine.ts`): its timer, alarms and clock-change handling are tested with fake
+  timers. `src/views/` are the pages, `src/shell/` opens and places the windows, `src/platform/`
+  is storage, sound, toasts and location.
+- One hidden window (`?w=engine`) runs the engine and publishes snapshots; every other window
+  draws them and sends commands back. Windows that are made from script must use the same
+  `BROWSER_ARGS` as the engine window in `tauri.conf.json`; a test keeps them in step.
+- The version is the one in `Resources/Info.plist`. `npm run sync-version` copies it into the
+  Windows files; CI fails if they differ.
+- The diagnostic switches are the same, as environment variables: `NAMAZ_FAKE_NOW`, `NAMAZ_MUTE`,
+  and `NAMAZ_TZ=Asia/Karachi` to make a fake clock set in another country make sense.
+
 ## Layout
 
 ```
@@ -117,11 +149,13 @@ it to `UIDump.swift` so it is covered too.
 ## Releasing
 
 1. Set the new version in `Resources/Info.plist` (`CFBundleShortVersionString`, and raise
-   `CFBundleVersion` by one).
+   `CFBundleVersion` by one), then run `npm run sync-version` in `windows/` so the Windows
+   files agree with it.
 2. Add an entry at the top of `CHANGELOG.md`, written for people who use the app.
 3. Run `make test`, then `make dist` to build `build/Namaz-<version>.dmg`.
 4. Commit, push, and publish a GitHub release tagged `v<version>` with the disk image attached
-   and the changelog entry as its notes.
+   and the changelog entry as its notes. Attach the Windows installer from the Windows
+   workflow's run for the same commit (`Namaz-<version>-windows-setup.exe`).
 
 ## Sending changes
 
