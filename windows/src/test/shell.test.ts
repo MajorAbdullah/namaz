@@ -32,8 +32,19 @@ describe("the shell's configuration", () => {
     }
   });
 
-  it("builds only the installer", () => {
-    expect(JSON.parse(read("src-tauri/tauri.conf.json")).bundle.targets).toEqual(["nsis"]);
+  it("builds the Windows installer and the Linux packages", () => {
+    expect(JSON.parse(read("src-tauri/tauri.conf.json")).bundle.targets).toEqual(["nsis", "deb", "appimage"]);
+  });
+
+  it("lists the Linux dependencies and a PNG icon", () => {
+    const bundle = JSON.parse(read("src-tauri/tauri.conf.json")).bundle;
+    expect(bundle.linux.deb.depends).toEqual([
+      "libwebkit2gtk-4.1-0",
+      "gstreamer1.0-plugins-good",
+      "gstreamer1.0-libav",
+      "geoclue-2.0",
+    ]);
+    expect(bundle.icon).toContain("icons/icon.png");
   });
 });
 
