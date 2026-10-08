@@ -76,6 +76,13 @@ Namaz needs the Microsoft Edge WebView2 runtime, which is already part of Window
 up-to-date Windows 10. The installer fetches it if it is missing. The Windows app is in
 [`windows/`](windows/); see [AGENTS.md](AGENTS.md) for how to build it.
 
+## Namaz for Linux
+
+The same app runs on Linux, in the system tray. Download **Namaz-<version>-linux-amd64.deb**
+or **Namaz-<version>-linux-x86_64.AppImage** from the
+[latest release](https://github.com/MajorAbdullah/namaz/releases/latest). See [AGENTS.md](AGENTS.md)
+for how to build it.
+
 ## Requirements
 
 It needs macOS 14 or later, on an Apple Silicon or Intel Mac. It was built and tested on

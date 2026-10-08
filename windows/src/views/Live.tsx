@@ -4,8 +4,9 @@ import { PrayedLog, type PauseLength, PrayerEvent, Urgency } from "../core";
 import { PrayerWarning } from "../app";
 import { onEvent, publishEvent, sendCommand } from "../platform/bus";
 import { importCustomSound, importedSoundName } from "../platform/audio";
+import { isCoverQuitKey } from "../platform/os";
 import { isTauri } from "../platform/runtime";
-import { currentWindow, observeSize, placeAbove, placeTopCenter, placeWidget, rememberWidgetPosition, setWindowSize } from "../shell/windowing";
+import { currentWindow, observeSize, dragIsland, isDragGesture, placeAbove, placeIsland, placeTopCenter, rememberIslandPosition, placeWidget, rememberWidgetPosition, setWindowSize } from "../shell/windowing";
 import { AlarmBanner } from "./Banner";
 import { PrayerCard, cardLayout } from "./Card";
 import { TakeoverContent } from "./Cover";
@@ -38,6 +39,7 @@ export function IslandWindow() {
   const [open, setOpen] = useState(false);
   const previousUrgency = useRef<Urgency>(Urgency.calm);
   const shrink = useRef<ReturnType<typeof setTimeout>>();
+  const pressedAt = useRef<{ x: number; y: number } | null>(null);
 
   const ringing = content?.headline.kind === "ringing";
   const urgency = content?.urgency ?? Urgency.calm;
@@ -60,25 +62,53 @@ export function IslandWindow() {
     if (wantOpen) {
       // Make room first, then let the island grow into it.
       const size = islandSize(true, ringing);
-      void placeTopCenter(size.width, size.height, ISLAND.gap).then(() => setOpen(true));
+      void placeIsland(size.width, size.height, ISLAND.gap)
+        .catch(() => {})
+        .finally(() => setOpen(true));
     } else if (open) {
       setOpen(false);
       // Keep the room until the island has finished closing, then take it away so the window is
       // not left covering what is beneath it.
       shrink.current = setTimeout(() => {
         const size = islandSize(false, false);
-        void placeTopCenter(size.width, size.height, ISLAND.gap);
+        void placeIsland(size.width, size.height, ISLAND.gap);
       }, 450);
     } else {
       const size = islandSize(false, false);
-      void placeTopCenter(size.width, size.height, ISLAND.gap);
+      void placeIsland(size.width, size.height, ISLAND.gap);
     }
     return () => shrink.current && clearTimeout(shrink.current);
   }, [wantOpen, ringing]);
 
+  useEffect(() => {
+    let cancelled = false;
+    let stop = () => {};
+    void rememberIslandPosition()
+      .then((unlisten) => (cancelled ? unlisten() : (stop = unlisten)))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      stop();
+    };
+  }, []);
   if (!content) return null;
   return (
-    <div class="window-fill" onMouseEnter={() => setHovering(true)} onMouseLeave={() => setHovering(false)} onContextMenu={(event) => event.preventDefault()}>
+    <div class="window-fill" onMouseEnter={() => setHovering(true)} onMouseLeave={() => setHovering(false)} onContextMenu={(event) => event.preventDefault()}
+      // Linux only (dragIsland does nothing elsewhere): the island can be moved, except by its buttons.
+      onMouseDown={(event) => {
+        pressedAt.current = event.button === 0 && !(event.target as Element).closest("button") ? { x: event.screenX, y: event.screenY } : null;
+      }}
+      onMouseMove={(event) => {
+        // Only a press that moves is a drag, so a click on the island stays a click.
+        const from = pressedAt.current;
+        if (!from || (event.buttons & 1) === 0) return void (pressedAt.current = null);
+        if (isDragGesture(from, { x: event.screenX, y: event.screenY })) {
+          pressedAt.current = null;
+          void dragIsland();
+        }
+      }}
+      onMouseUp={() => (pressedAt.current = null)}
+    >
       <IslandContent
         content={content}
         expanded={open}
@@ -273,7 +303,16 @@ export function CoverWindow() {
     });
     const hideCursor = () => {};
     hideCursor();
+    // The cover has the keyboard while it is up, so it answers Ctrl+Alt+Q itself. Where the global
+    // shortcut works this is a second route to the same quit; on Wayland it is the only one.
+    const onKey = (event: KeyboardEvent) => {
+      if (!isCoverQuitKey(event)) return;
+      event.preventDefault();
+      void quitApp();
+    };
+    addEventListener("keydown", onKey);
     return () => {
+      removeEventListener("keydown", onKey);
       removeEventListener("resize", onResize);
       stop?.();
       stopClose?.();
