@@ -14,12 +14,33 @@ export class AlarmPlayer {
   private audio: HTMLAudioElement | null = null;
   private objectURL: string | null = null;
   private chimes = new Map<string, HTMLAudioElement>();
+  private generation = 0;
 
   async play(sound: AlarmSound, volume: number, onEnd: () => void): Promise<boolean> {
     this.stop();
-    const source = await this.source(sound);
-    if (!source) return false;
+    // Bumped by stop(), so an alarm dismissed while a source is still starting is not picked
+    // up again by the fallback.
+    const generation = this.generation;
+    const sources = await this.sources(sound);
+    for (let i = 0; i < sources.length; i++) {
+      if (this.generation !== generation) return false;
+      const outcome = await this.start(sound, sources[i], volume, onEnd, i < sources.length - 1);
+      if (outcome !== "unsupported") return outcome === "playing";
+    }
+    return false;
+  }
 
+  /**
+   * Starts one source. "unsupported" means the web view cannot decode it and the next source is
+   * worth a try; it is only reported when there is a next one (`canFallBack`).
+   */
+  private async start(
+    sound: AlarmSound,
+    source: string,
+    volume: number,
+    onEnd: () => void,
+    canFallBack: boolean,
+  ): Promise<"playing" | "failed" | "unsupported"> {
     const audio = new Audio(source);
     audio.volume = Math.min(Math.max(volume, 0), 1);
     if (sound.kind === "tone") {
@@ -33,19 +54,30 @@ export class AlarmPlayer {
     } else {
       audio.addEventListener("ended", () => this.finish(audio, onEnd));
     }
-    audio.addEventListener("error", () => this.finish(audio, onEnd));
+    // While play() is pending, a decoding error is play()'s to report, so the fallback can run
+    // without ending the alarm first.
+    let pending = true;
+    audio.addEventListener("error", () => {
+      if (!pending) this.finish(audio, onEnd);
+    });
     try {
       this.audio = audio;
       await audio.play();
-      return true;
-    } catch {
-      // Blocked or unplayable: the alarm still shows, as it does with no sound at all.
-      if (this.audio === audio) this.release();
-      return false;
+      pending = false;
+      return "playing";
+    } catch (error) {
+      pending = false;
+      // Stopped or replaced while starting: nothing more to try.
+      if (this.audio !== audio) return "failed";
+      this.release(!canFallBack);
+      // Only a format the web view cannot decode (WebKitGTK without AAC) is worth another try;
+      // a refusal to play without a click, say, would refuse every source alike.
+      return canFallBack && cannotDecode(error, audio) ? "unsupported" : "failed";
     }
   }
 
   stop(): void {
+    this.generation++;
     this.audio?.pause();
     this.release();
   }
@@ -70,33 +102,46 @@ export class AlarmPlayer {
     onEnd();
   }
 
-  private release(): void {
+  private release(revoke = true): void {
     this.audio = null;
+    if (!revoke) return;
     if (this.objectURL) URL.revokeObjectURL(this.objectURL);
     this.objectURL = null;
   }
 
-  private async source(sound: AlarmSound): Promise<string | null> {
+  /** The files to try for a sound, best first. */
+  private async sources(sound: AlarmSound): Promise<string[]> {
     switch (sound.kind) {
       case "silent":
-        return null;
+        return [];
       case "adhan":
-        return "/Adhan.m4a";
+        // WebKitGTK on Linux often has no AAC decoder; the Ogg copy is for it.
+        return ["/Adhan.m4a", "/Adhan.ogg"];
       case "tone":
-        return `/tones/${sound.name}.wav`;
+        return [`/tones/${sound.name}.wav`];
       case "custom": {
-        if (!isTauri) return null;
+        if (!isTauri) return [];
         try {
           const { BaseDirectory, readFile } = await import("@tauri-apps/plugin-fs");
           const bytes = await readFile(`${CUSTOM_DIR}/${sound.fileName}`, { baseDir: BaseDirectory.AppData });
           this.objectURL = URL.createObjectURL(new Blob([bytes]));
-          return this.objectURL;
+          return [this.objectURL];
         } catch {
-          return null;
+          return [];
         }
       }
     }
   }
+}
+
+/** MediaError codes for a source the web view cannot decode. */
+const MEDIA_ERR_DECODE = 3;
+const MEDIA_ERR_SRC_NOT_SUPPORTED = 4;
+
+function cannotDecode(error: unknown, audio: HTMLAudioElement): boolean {
+  if (error instanceof Error && error.name === "NotSupportedError") return true;
+  const code = audio.error?.code;
+  return code === MEDIA_ERR_DECODE || code === MEDIA_ERR_SRC_NOT_SUPPORTED;
 }
 
 /**
