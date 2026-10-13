@@ -17,6 +17,8 @@ const targets = [
   { file: "package.json", pattern: /("version":\s*")([^"]+)(")/ },
   { file: "src-tauri/tauri.conf.json", pattern: /("version":\s*")([^"]+)(")/ },
   { file: "src-tauri/Cargo.toml", pattern: /^(version\s*=\s*")([^"]+)(")/m },
+  // The lockfile records the app's own version, and `cargo --locked` refuses a lockfile that differs.
+  { file: "src-tauri/Cargo.lock", pattern: /(name = "namaz"\nversion = ")([^"]+)(")/ },
 ];
 
 const check = process.argv.includes("--check");

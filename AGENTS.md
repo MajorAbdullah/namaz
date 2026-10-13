@@ -46,7 +46,12 @@ npm run tauri build   # on Windows: the installer, in src-tauri/target/release/b
   draws them and sends commands back. Windows that are made from script must use the same
   `BROWSER_ARGS` as the engine window in `tauri.conf.json`; a test keeps them in step.
 - The version is the one in `Resources/Info.plist`. `npm run sync-version` copies it into the
-  Windows files; CI fails if they differ.
+  Windows files, `Cargo.lock` included; CI fails if they differ.
+- `src-tauri/Cargo.lock` is committed, so a build uses the Rust dependencies it was tested with.
+  Tauri refuses to build when a Rust plugin and its JavaScript twin (`tauri-plugin-fs` and
+  `@tauri-apps/plugin-fs`) are on different minor versions, so update them together:
+  `cargo update` in `src-tauri` and `npm update @tauri-apps/plugin-fs ...` in `windows`, and
+  commit both lockfiles. CI runs cargo with `--locked`, so a stale lockfile fails there.
 - The diagnostic switches are the same, as environment variables: `NAMAZ_FAKE_NOW`, `NAMAZ_MUTE`,
   and `NAMAZ_TZ=Asia/Karachi` to make a fake clock set in another country make sense.
 
