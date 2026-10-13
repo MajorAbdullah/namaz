@@ -57,6 +57,14 @@ jobs:
         working-directory: windows/src-tauri
 
       - run: npm run tauri build
+      # The Rust dependencies are resolved afresh until windows/src-tauri/Cargo.lock is committed;
+      # this is where to take it from.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Cargo.lock
+          path: windows/src-tauri/Cargo.lock
+          if-no-files-found: ignore
       - name: Name the installer
         shell: bash
         run: |
