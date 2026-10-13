@@ -2,6 +2,13 @@
 
 What changed in each version of Namaz, newest first.
 
+## 1.3.1 (14 October 2026)
+
+- **Much lighter on the battery and memory (Mac).** Namaz used about 15% of a processor core
+  while doing nothing, and its memory grew by roughly 2 MB every second until the app was quit.
+  The cause was the rolling animation on the countdown digits, which ran every second. The
+  countdown now simply changes. At rest the app uses under 1% of a core and stays at about 24 MB.
+
 ## 1.3.0 (8 October 2026)
 
 - **Namaz for Windows.** The same app now runs on Windows 10 and later, from the system tray:

@@ -143,9 +143,10 @@ struct IslandContent: View {
                 case .upcoming:
                     Text(Countdown.precise(content.remaining))
                         .monospacedDigit()
+                        // Not animated: it changes every second, and an animated digit makes macOS
+                        // build new glyph bitmaps for every frame of every change, which cost CPU
+                        // and memory that the system never gives back.
                         .foregroundStyle(content.urgency.color ?? .white)
-                        .contentTransition(.numericText(countsDown: true))
-                        .animation(.snappy, value: Int(content.remaining.rounded(.up)))
                 case .ringing: Text("now")
                 case .unavailable: Text("No times")
                 }
