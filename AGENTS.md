@@ -98,6 +98,10 @@ layer that connects that logic to timers, sound and windows.
   which is why the island tracks the pointer itself (`HoverTrackingHostingView`). The screen
   cover (`CoverPanel`) is the one exception: it takes the keyboard on purpose while it is up,
   and hands it back when it goes.
+- **Do not animate the countdown digits.** No `.contentTransition(.numericText)` or
+  `.animation` on text that changes every second. macOS makes new glyph bitmaps for every frame
+  of every change and never frees them: the app grew by about 2 MB a second and sat at 15% CPU
+  while idle (fixed in 1.3.1). Pulses and colour changes are fine; they do not redraw glyphs.
 - **Rebuilding changes the app's identity.** It is ad-hoc signed, so after each rebuild macOS
   asks again about location and notifications.
 - **The panel tests put real windows on screen** for a second or two. That is expected.

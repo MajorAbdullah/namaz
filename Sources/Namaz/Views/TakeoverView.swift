@@ -188,8 +188,6 @@ struct TakeoverContent: View {
                 .monospacedDigit()
                 // Not the stage's colour: red words would sink into the red light behind them.
                 .foregroundStyle(Palette.sunCream)
-                .contentTransition(.numericText(countsDown: true))
-                .animation(.snappy, value: detail)
                 .opacity(isArranged ? 1 : 0)
                 .animation(.easeOut(duration: 0.5).delay(0.55), value: isArranged)
         }
