@@ -3,6 +3,7 @@ import type { Snapshot } from "../app";
 import { Urgency } from "../core";
 import { BROWSER_ARGS, isTauri } from "../platform/runtime";
 import { onEvent, publishEvent } from "../platform/bus";
+import { coverOffersQuit, sessionKind, shouldPosition } from "../platform/os";
 import { monitorBounds } from "./windowing";
 
 type Options = Record<string, unknown>;
@@ -220,6 +221,7 @@ class CoverManager {
     const monitors = await monitorBounds();
     this.bounds = JSON.stringify(monitors);
     const { PhysicalPosition, PhysicalSize } = await import("@tauri-apps/api/window");
+    const kind = await sessionKind();
     for (let index = 0; index < monitors.length; index++) {
       const monitor = monitors[index];
       const window = await ensure(`cover-${index}`, {
@@ -236,11 +238,12 @@ class CoverManager {
         shadow: false,
         visible: false,
       });
-      await window.setPosition(new PhysicalPosition(monitor.x, monitor.y));
+      // Wayland ignores the position; full screen still puts the cover over a whole monitor.
+      if (shouldPosition(kind)) await window.setPosition(new PhysicalPosition(monitor.x, monitor.y));
       await window.setSize(new PhysicalSize(monitor.width, monitor.height));
       await window.setFullscreen(true).catch(() => {});
       await window.show();
-      await window.setAlwaysOnTop(true);
+      await window.setAlwaysOnTop(true).catch(() => {});
       // Take the keyboard if the system lets us, so typing does not carry on unseen in the app
       // underneath. Nothing depends on this succeeding.
       if (index === 0) await window.setFocus().catch(() => {});
@@ -270,7 +273,8 @@ class CoverManager {
       await register("CommandOrControl+Alt+Q", (event) => {
         if (event.state === "Pressed") this.quit();
       });
-      this.offersQuit = false;
+      // Wayland accepts the shortcut but never delivers it, so the Quit button stays there too.
+      this.offersQuit = coverOffersQuit(await sessionKind(), true);
     } catch (error) {
       console.warn("namaz: could not reserve Ctrl+Alt+Q while the screen is covered", error);
       this.offersQuit = true;

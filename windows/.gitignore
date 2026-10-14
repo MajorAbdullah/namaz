@@ -4,3 +4,4 @@ src-tauri/target
 src-tauri/gen
 ui-dump
 public/Adhan.m4a
+public/Adhan.ogg

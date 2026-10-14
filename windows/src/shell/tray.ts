@@ -1,4 +1,5 @@
 import type { TrayIcon } from "@tauri-apps/api/tray";
+import { isLinux } from "../platform/os";
 import { isTauri } from "../platform/runtime";
 
 export interface TrayActions {
@@ -6,6 +7,37 @@ export interface TrayActions {
   openSettings: () => void;
   toggleWidget: () => void;
   quit: () => void;
+}
+
+type MenuEntry = { id: string; text: string; enabled?: boolean; action?: () => void } | { item: "Separator" };
+
+/**
+ * The tray menu. On Linux there are no clicks on the icon and no tooltip, so the menu opens on
+ * any click and starts with a way to the popover and a line saying what is next.
+ */
+export function buildMenuItems(linux: boolean, actions: TrayActions, status: string, showPopover: () => void): MenuEntry[] {
+  const common: MenuEntry[] = [
+    { id: "settings", text: "Settings…", action: actions.openSettings },
+    { id: "widget", text: "Show or Hide Widget", action: actions.toggleWidget },
+    { item: "Separator" },
+    { id: "quit", text: "Quit Namaz", action: actions.quit },
+  ];
+  if (!linux) return common;
+  return [
+    { id: "show", text: "Show Prayer Times", action: showPopover },
+    { id: "status", text: status || "Namaz", enabled: false },
+    { item: "Separator" },
+    ...common,
+  ];
+}
+
+/** Where the popover opens with no tray click to anchor it: the top-right of the primary monitor. */
+async function topRightAnchor(): Promise<{ x: number; y: number }> {
+  const { primaryMonitor } = await import("@tauri-apps/api/window");
+  const monitor = await primaryMonitor();
+  if (!monitor) return { x: 0, y: 0 };
+  // placeAbove opens downwards when the anchor is at the top edge, and keeps the window on screen.
+  return { x: monitor.position.x + monitor.size.width, y: monitor.position.y };
 }
 
 /**
@@ -18,6 +50,7 @@ export class Tray {
   private plain: { rgba: Uint8Array; width: number; height: number } | null = null;
   private ringing = false;
   private tooltip = "Namaz";
+  private statusItem: { setText: (text: string) => Promise<void> } | null = null;
 
   async start(actions: TrayActions, showsWidget: () => boolean): Promise<void> {
     if (!isTauri) return;
@@ -30,20 +63,17 @@ export class Tray {
       const size = await image.size();
       this.plain = { rgba: await image.rgba(), width: size.width, height: size.height };
     }
+    const linux = isLinux();
     const menu = await Menu.new({
-      items: [
-        { id: "settings", text: "Settings…", action: actions.openSettings },
-        { id: "widget", text: "Show or Hide Widget", action: actions.toggleWidget },
-        { item: "Separator" },
-        { id: "quit", text: "Quit Namaz", action: actions.quit },
-      ],
+      items: buildMenuItems(linux, actions, this.tooltip, () => void topRightAnchor().then(actions.togglePopover)),
     });
+    if (linux) this.statusItem = await menu.get("status");
     this.icon = await TrayIcon.new({
       id: "namaz",
       icon: image ?? undefined,
       tooltip: this.tooltip,
       menu,
-      showMenuOnLeftClick: false,
+      showMenuOnLeftClick: linux,
       action: (event) => {
         if (event.type === "Click" && event.button === "Left" && event.buttonState === "Up") {
           actions.togglePopover({ x: event.position.x, y: event.position.y });
@@ -60,6 +90,7 @@ export class Tray {
     if (tooltip !== this.tooltip) {
       this.tooltip = tooltip;
       await this.icon.setTooltip(tooltip).catch(() => {});
+      await this.statusItem?.setText(title || "Namaz").catch(() => {});
     }
     if (ringing !== this.ringing) {
       this.ringing = ringing;

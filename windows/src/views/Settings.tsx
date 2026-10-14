@@ -33,6 +33,7 @@ import {
   prayerTimes,
 } from "../core";
 import { TONES } from "../platform/audio";
+import { isLinux } from "../platform/os";
 import { PauseAlertsMenu } from "./Popover";
 
 export type SettingsTab = "general" | "alarms" | "runningOut" | "calculation";
@@ -216,7 +217,7 @@ function GeneralTab({ settings, actions, format }: { settings: AppSettings; acti
         </Field>
       </Section>
 
-      <Section footer="Namaz opens quietly in the tray when you sign in to Windows.">
+      <Section footer={isLinux() ? "Namaz opens quietly in the tray when you sign in." : "Namaz opens quietly in the tray when you sign in to Windows."}>
         <Toggle
           label="Open Namaz when I sign in"
           checked={login ?? false}
