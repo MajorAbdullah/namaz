@@ -115,7 +115,17 @@ export function dayKey(day: CalendarDay): string {
   return `${pad(day.year, 4)}-${pad(day.month, 2)}-${pad(day.day, 2)}`;
 }
 
-/** The time zone this computer is set to. */
+/**
+ * The time zone this computer is set to, or UTC when that cannot be used. A system with no zone
+ * set (a bare Linux install, say) reports Etc/Unknown, which every later formatting call refuses.
+ */
 export function systemTimeZone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (!zone || zone === "Etc/Unknown") return "UTC";
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: zone });
+    return zone;
+  } catch {
+    return "UTC";
+  }
 }
