@@ -33,4 +33,14 @@ describe("the desktop session", () => {
     const altGrQ = { key: "@", code: "KeyQ", ctrlKey: true, altKey: true };
     expect(isCoverQuitKey(altGrQ)).toBe(true);
   });
+
+  it("goes by the physical key, so another key that types q does not quit", () => {
+    // AZERTY: the key that types "q" is where QWERTY has A.
+    expect(isCoverQuitKey({ key: "q", code: "KeyA", ctrlKey: true, altKey: true })).toBe(false);
+  });
+
+  it("does not take the Super key for Ctrl", () => {
+    const superAltQ = { key: "q", code: "KeyQ", ctrlKey: false, altKey: true, metaKey: true };
+    expect(isCoverQuitKey(superAltQ)).toBe(false);
+  });
 });

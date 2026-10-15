@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { isLinux } from "../platform/os";
-import { Tray, buildMenuItems } from "../shell/tray";
+import { Tray, buildMenuItems, topRightAnchor } from "../shell/tray";
 
 const mocks = vi.hoisted(() => ({
   linux: true,
@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   setTooltip: vi.fn(() => Promise.resolve()),
   setIcon: vi.fn(() => Promise.resolve()),
+  primaryMonitor: vi.fn(),
 }));
 
 vi.mock("../platform/runtime", () => ({ isTauri: true }));
@@ -21,6 +22,7 @@ vi.mock("@tauri-apps/api/tray", () => ({
 }));
 vi.mock("@tauri-apps/api/app", () => ({ defaultWindowIcon: vi.fn(async () => null) }));
 vi.mock("@tauri-apps/api/image", () => ({ Image: { new: vi.fn() } }));
+vi.mock("@tauri-apps/api/window", () => ({ primaryMonitor: mocks.primaryMonitor }));
 
 const noop = () => {};
 const actions = { togglePopover: noop, openSettings: noop, toggleWidget: noop, quit: noop };
@@ -88,5 +90,17 @@ describe("the tray status line", () => {
     expect(mocks.get).not.toHaveBeenCalled();
     expect(mocks.setText).not.toHaveBeenCalled();
     expect(mocks.setTooltip).toHaveBeenCalledWith("Namaz · Maghrib in 1h 33m");
+  });
+});
+
+describe("where the popover opens from the tray menu", () => {
+  it("is the primary monitor's last column, not the first of the monitor to its right", async () => {
+    mocks.primaryMonitor.mockResolvedValueOnce({ position: { x: 0, y: 0 }, size: { width: 1920, height: 1080 } });
+    expect(await topRightAnchor()).toEqual({ x: 1919, y: 0 });
+  });
+
+  it("still opens when the monitors cannot be read", async () => {
+    mocks.primaryMonitor.mockRejectedValueOnce(new Error("no monitors"));
+    expect(await topRightAnchor()).toEqual({ x: 0, y: 0 });
   });
 });

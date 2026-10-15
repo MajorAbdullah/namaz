@@ -32,12 +32,18 @@ export function buildMenuItems(linux: boolean, actions: TrayActions, status: str
 }
 
 /** Where the popover opens with no tray click to anchor it: the top-right of the primary monitor. */
-async function topRightAnchor(): Promise<{ x: number; y: number }> {
-  const { primaryMonitor } = await import("@tauri-apps/api/window");
-  const monitor = await primaryMonitor();
-  if (!monitor) return { x: 0, y: 0 };
-  // placeAbove opens downwards when the anchor is at the top edge, and keeps the window on screen.
-  return { x: monitor.position.x + monitor.size.width, y: monitor.position.y };
+export async function topRightAnchor(): Promise<{ x: number; y: number }> {
+  try {
+    const { primaryMonitor } = await import("@tauri-apps/api/window");
+    const monitor = await primaryMonitor();
+    if (!monitor) return { x: 0, y: 0 };
+    // The monitor's last column, not the first one past it, which belongs to any monitor on its
+    // right. placeAbove opens downwards when the anchor is at the top edge, and keeps it on screen.
+    return { x: monitor.position.x + monitor.size.width - 1, y: monitor.position.y };
+  } catch {
+    // The popover still opens, in the corner of whichever screen placeAbove falls back to.
+    return { x: 0, y: 0 };
+  }
 }
 
 /**

@@ -48,9 +48,10 @@ export function coverOffersQuit(kind: SessionKind, shortcutReserved: boolean): b
 /**
  * Ctrl+Alt+Q pressed inside the cover, which has the keyboard, does what the global shortcut does.
  * Ctrl+Alt is AltGr on many layouts, so the Q key can type another character; its physical key is
- * still KeyQ, which is what the global shortcut matches too.
+ * still KeyQ, which is what the global shortcut matches too. So the physical key decides when it is
+ * known, and on AZERTY the key that types "q" (KeyA) does not quit. The character is only a fallback.
  */
-export function isCoverQuitKey(event: { key: string; code?: string; ctrlKey: boolean; altKey: boolean; metaKey?: boolean }): boolean {
-  const isQ = event.code === "KeyQ" || event.key.toLowerCase() === "q";
-  return (event.ctrlKey || event.metaKey === true) && event.altKey && isQ;
+export function isCoverQuitKey(event: { key: string; code?: string; ctrlKey: boolean; altKey: boolean }): boolean {
+  const isQ = event.code ? event.code === "KeyQ" : event.key.toLowerCase() === "q";
+  return event.ctrlKey && event.altKey && isQ;
 }

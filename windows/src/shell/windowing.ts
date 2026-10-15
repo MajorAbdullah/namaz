@@ -105,6 +105,9 @@ let islandDraggedAt = -Infinity;
 /** How long after a user move the app leaves the island's position alone, so it does not jump mid-drag. */
 export const ISLAND_SETTLE_MS = 500;
 
+/** A placement put off because the island was being dragged, to be done once the drag settles. */
+let settleTimer: ReturnType<typeof setTimeout> | undefined;
+
 /**
  * Whether a reported move (physical pixels) is just the echo of the app's own setPosition. Saving
  * that would pin the fallback top-centre spot as if the user had chosen it.
@@ -150,15 +153,24 @@ export async function placeIsland(width: number, height: number, gap: number): P
   if (!isLinux()) return placeTopCenter(width, height, gap);
   const { getCurrentWindow, LogicalPosition, LogicalSize, availableMonitors } = await api();
   const window = getCurrentWindow();
-  // Mid-drag the window is the user's; resizing alone keeps it under the pointer.
-  const dragging = Date.now() - islandDraggedAt < ISLAND_SETTLE_MS;
+  clearTimeout(settleTimer);
+  // Mid-drag the window is the user's; resizing alone keeps it under the pointer. A size changed
+  // then (the island closing as the pointer leaves it) is centred on the drop point once the drag
+  // has settled, since nothing else would place it again.
+  const sinceDrag = Date.now() - islandDraggedAt;
+  const dragging = sinceDrag < ISLAND_SETTLE_MS;
+  if (dragging) settleTimer = setTimeout(() => void placeIsland(width, height, gap).catch(() => {}), ISLAND_SETTLE_MS - sinceDrag);
   const bounds = dragging ? null : await primaryArea();
   const saved = readAnchor();
   const onScreen = saved && bounds ? await isReachable(saved.x - width / 2, saved.y, width, height, availableMonitors) : false;
   const target = bounds ? islandTopLeft(saved, width, gap, bounds, onScreen) : null;
   const position = bounds && target && shouldPosition(await sessionKind()) ? { x: Math.round(target.x), y: Math.round(target.y) } : null;
-  // Marked before resizing too, since a resize can also be reported as a move.
-  if (bounds && position) islandTarget = { x: Math.round(position.x * bounds.scale), y: Math.round(position.y * bounds.scale) };
+  // Marked before resizing too, since a resize can also be reported as a move. The window turns
+  // logical pixels into physical ones with the scale of the monitor it is on, not the primary's.
+  if (position) {
+    const scale = await window.scaleFactor();
+    islandTarget = { x: Math.round(position.x * scale), y: Math.round(position.y * scale) };
+  }
   await window.setSize(new LogicalSize(Math.ceil(width), Math.ceil(height)));
   if (position) await window.setPosition(new LogicalPosition(position.x, position.y));
 }
@@ -168,12 +180,15 @@ export async function rememberIslandPosition(): Promise<() => void> {
   if (!isTauri || !isLinux()) return () => {};
   const { getCurrentWindow } = await api();
   const window = getCurrentWindow();
+  let latest = 0;
   return window.onMoved(async ({ payload }) => {
     if (isAppMove(payload, islandTarget)) return;
     islandDraggedAt = Date.now();
+    const move = ++latest;
     try {
-      const scale = await window.scaleFactor();
-      const size = await window.outerSize();
+      const [scale, size] = await Promise.all([window.scaleFactor(), window.outerSize()]);
+      // A drag reports many moves, and their answers can come back out of order; keep the last.
+      if (move !== latest) return;
       localStorage.setItem("islandAnchor", JSON.stringify({ x: payload.x / scale + size.width / scale / 2, y: payload.y / scale }));
     } catch {
       // Not saving one move only means the island comes back to the previous spot.

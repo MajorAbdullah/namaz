@@ -38,8 +38,12 @@ fn diagnostics() -> Diagnostics {
 
 /// What kind of desktop session this is. Wayland ignores where windows are asked to go and never
 /// delivers global shortcuts, so the pages skip or back those up there. `XDG_SESSION_TYPE` is what
-/// the login manager says; `WAYLAND_DISPLAY` covers sessions started without one.
+/// the login manager says; `WAYLAND_DISPLAY` covers sessions started without one. `GDK_BACKEND=x11`
+/// comes first: it runs the app through XWayland, where windows can be placed as on X11.
 fn read_session_kind(var: impl Fn(&str) -> Option<String>) -> &'static str {
+    if var("GDK_BACKEND").is_some_and(|value| value.trim().to_ascii_lowercase().starts_with("x11")) {
+        return "x11";
+    }
     match var("XDG_SESSION_TYPE").map(|value| value.trim().to_ascii_lowercase()).as_deref() {
         Some("wayland") => "wayland",
         Some("x11") => "x11",
@@ -171,5 +175,13 @@ mod tests {
         assert_eq!(read_session_kind(env(&[("DISPLAY", ":0")])), "x11");
         assert_eq!(read_session_kind(env(&[("XDG_SESSION_TYPE", "tty")])), "other");
         assert_eq!(read_session_kind(env(&[])), "other");
+    }
+
+    #[test]
+    fn an_x11_backend_on_wayland_is_x11() {
+        let session = |backend| read_session_kind(env(&[("XDG_SESSION_TYPE", "wayland"), ("DISPLAY", ":0"), ("GDK_BACKEND", backend)]));
+        assert_eq!(session("x11"), "x11");
+        assert_eq!(session("x11,wayland"), "x11");
+        assert_eq!(session("wayland"), "wayland");
     }
 }
