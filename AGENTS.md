@@ -46,7 +46,12 @@ npm run tauri build   # on Windows: the installer, in src-tauri/target/release/b
   draws them and sends commands back. Windows that are made from script must use the same
   `BROWSER_ARGS` as the engine window in `tauri.conf.json`; a test keeps them in step.
 - The version is the one in `Resources/Info.plist`. `npm run sync-version` copies it into the
-  Windows files; CI fails if they differ.
+  Windows files, `Cargo.lock` included; CI fails if they differ.
+- `src-tauri/Cargo.lock` is committed, so a build uses the Rust dependencies it was tested with.
+  Tauri refuses to build when a Rust plugin and its JavaScript twin (`tauri-plugin-fs` and
+  `@tauri-apps/plugin-fs`) are on different minor versions, so update them together:
+  `cargo update` in `src-tauri` and `npm update @tauri-apps/plugin-fs ...` in `windows`, and
+  commit both lockfiles. CI runs cargo with `--locked`, so a stale lockfile fails there.
 - The diagnostic switches are the same, as environment variables: `NAMAZ_FAKE_NOW`, `NAMAZ_MUTE`,
   and `NAMAZ_TZ=Asia/Karachi` to make a fake clock set in another country make sense.
 
@@ -118,6 +123,10 @@ layer that connects that logic to timers, sound and windows.
   which is why the island tracks the pointer itself (`HoverTrackingHostingView`). The screen
   cover (`CoverPanel`) is the one exception: it takes the keyboard on purpose while it is up,
   and hands it back when it goes.
+- **Do not animate the countdown digits.** No `.contentTransition(.numericText)` or
+  `.animation` on text that changes every second. macOS makes new glyph bitmaps for every frame
+  of every change and never frees them: the app grew by about 2 MB a second and sat at 15% CPU
+  while idle (fixed in 1.3.1). Pulses and colour changes are fine; they do not redraw glyphs.
 - **Rebuilding changes the app's identity.** It is ad-hoc signed, so after each rebuild macOS
   asks again about location and notifications.
 - **The panel tests put real windows on screen** for a second or two. That is expected.

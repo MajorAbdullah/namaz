@@ -257,8 +257,6 @@ struct PrayerCard: View {
         let digits = Text(Countdown.precise(content.remaining))
             .font(font.weight(.semibold))
             .monospacedDigit()
-            .contentTransition(.numericText(countsDown: true))
-            .animation(.snappy, value: Int(content.remaining.rounded(.up)))
         if let color = content.urgency.color {
             HStack(spacing: 6) {
                 Image(systemName: content.urgency.symbolName)
