@@ -18,7 +18,8 @@ const targets = [
   { file: "src-tauri/tauri.conf.json", pattern: /("version":\s*")([^"]+)(")/ },
   { file: "src-tauri/Cargo.toml", pattern: /^(version\s*=\s*")([^"]+)(")/m },
   // The lockfile records the app's own version, and `cargo --locked` refuses a lockfile that differs.
-  { file: "src-tauri/Cargo.lock", pattern: /(name = "namaz"\nversion = ")([^"]+)(")/ },
+  // Git on Windows checks files out with CRLF line endings, so the line break may carry a \r.
+  { file: "src-tauri/Cargo.lock", pattern: /(name = "namaz"\r?\nversion = ")([^"]+)(")/ },
 ];
 
 const check = process.argv.includes("--check");
