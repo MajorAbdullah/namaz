@@ -58,9 +58,9 @@ jobs:
 
       # The shell needs the built pages to compile against.
       - run: npm run build
-      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --locked --all-targets -- -D warnings
         working-directory: windows/src-tauri
-      - run: cargo test
+      - run: cargo test --locked
         working-directory: windows/src-tauri
 
       - run: npm run tauri build -- --bundles deb,appimage
