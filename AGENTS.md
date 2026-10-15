@@ -62,9 +62,12 @@ CI builds it in `.github/workflows/linux.yml`. Known limits:
 
 - The tray has no click events or tooltip, so the menu shows the next prayer instead.
 - On Wayland windows cannot be placed and the cover's escape is Ctrl+Alt+Q inside the cover or
-  its Quit button; on X11 both work as on Mac and Windows.
-- Sound needs gstreamer1.0-plugins-good; if it is missing, the app falls back to
-  `Resources/Adhan.ogg`. Regenerate it if the adhan changes:
+  its Quit button; on X11 both work as on Mac and Windows. Started with `GDK_BACKEND=x11`, the
+  app runs through XWayland and behaves as on X11.
+- On Wayland the cover cannot choose a monitor, so with more than one only one is covered.
+- Sound needs GStreamer: gstreamer1.0-plugins-good for the tones, and gstreamer1.0-libav to
+  decode the AAC in `Adhan.m4a`. Without an AAC decoder the app plays `Resources/Adhan.ogg`
+  instead. Regenerate it if the adhan changes:
   `ffmpeg -i Resources/Adhan.m4a -c:a libopus -b:a 96k Resources/Adhan.ogg`.
 
 ## Layout
