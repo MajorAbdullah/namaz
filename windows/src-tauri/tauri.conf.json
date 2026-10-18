@@ -32,17 +32,30 @@
   "bundle": {
     "active": true,
     "targets": [
-      "nsis"
+      "nsis",
+      "deb",
+      "appimage"
     ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/icon.png",
       "icons/icon.ico"
     ],
     "copyright": "MIT licence. The adhan recording is CC BY 3.0, see the README.",
     "category": "Lifestyle",
     "shortDescription": "Prayer times and the adhan",
+    "linux": {
+      "deb": {
+        "depends": [
+          "libwebkit2gtk-4.1-0",
+          "gstreamer1.0-plugins-good",
+          "gstreamer1.0-libav",
+          "geoclue-2.0"
+        ]
+      }
+    },
     "windows": {
       "nsis": {
         "installMode": "currentUser",
