@@ -51,20 +51,12 @@ jobs:
 
       # The shell needs the built pages to compile against.
       - run: npm run build
-      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --locked --all-targets -- -D warnings
         working-directory: windows/src-tauri
-      - run: cargo test
+      - run: cargo test --locked
         working-directory: windows/src-tauri
 
       - run: npm run tauri build
-      # The Rust dependencies are resolved afresh until windows/src-tauri/Cargo.lock is committed;
-      # this is where to take it from.
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: Cargo.lock
-          path: windows/src-tauri/Cargo.lock
-          if-no-files-found: ignore
       - name: Name the installer
         shell: bash
         run: |
