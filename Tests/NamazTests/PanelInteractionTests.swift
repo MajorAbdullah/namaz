@@ -80,7 +80,7 @@ import Testing
         #expect(abs(panel.frame.origin.y - (start.y - 10)) < 1)
     }
 
-    @Test func theIslandOpensUnderThePointerAndClosesAfterItLeaves() async throws {
+    @Test func theIslandOpensWhenClickedNotWhenPointedAtAndClosesAfterItLeaves() async throws {
         let model = isolatedModel(layout: .island)
         let controller = IslandController(model: model, actions: AppActions(openSettings: {}, quit: {}))
         let panel = controller.panel
@@ -99,11 +99,30 @@ import Testing
         }
         let view = try #require(panel.contentView)
 
+        // The strip along the top, which stays put as the island grows below it.
+        func clickTheStrip() throws {
+            try click(CGPoint(x: panel.frame.width / 2, y: panel.frame.height - resting.height / 2), in: panel)
+        }
+
         view.mouseEntered(with: try pointer(.mouseEntered))
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(panel.frame.size == resting, "pointing at it is not enough")
+
+        let centre = panel.frame.midX
+        try clickTheStrip()
+        try await Task.sleep(for: .milliseconds(100))
         #expect(panel.frame.height > resting.height + 100, "room for the timetable")
-        #expect(panel.frame.midX == NSRect(origin: panel.frame.origin, size: resting).midX + (panel.frame.width - resting.width) / 2)
+        #expect(abs(panel.frame.midX - centre) <= 1, "it grows about the middle of the notch")
 
         view.mouseExited(with: try pointer(.mouseExited))
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(panel.frame.size == resting)
+
+        // A second click closes it without the pointer having to leave.
+        try clickTheStrip()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(panel.frame.height > resting.height + 100)
+        try clickTheStrip()
         try await Task.sleep(for: .milliseconds(700))
         #expect(panel.frame.size == resting)
     }

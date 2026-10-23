@@ -4,8 +4,9 @@ import NamazCore
 import SwiftUI
 
 /// The island's window: pinned to the top centre of the screen with the notch (or, failing that,
-/// the screen in use), opening when the pointer is over it, an alarm is ringing, or a prayer's
-/// time has just come closer to running out.
+/// the screen in use), opening when it is clicked, an alarm is ringing, or a prayer's time has
+/// just come closer to running out. Merely moving the pointer to the notch does not open it, since
+/// that is where the pointer passes on its way to the menu bar.
 @MainActor
 final class IslandController {
     /// Without a notch the island is a pill that hangs this far below the menu bar.
@@ -23,7 +24,8 @@ final class IslandController {
     private var peek: Task<Void, Never>?
 
     private var isVisible = false
-    private var isHovering = false
+    /// Opened by a click; closed by clicking the top strip again or by the pointer leaving.
+    private var isOpened = false
     private var isRinging = false
     private var isPeeking = false
 
@@ -36,11 +38,14 @@ final class IslandController {
         panel.level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 1)
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
 
-        let hosting = HoverTrackingHostingView(rootView: IslandView(model: model, state: state)
+        let hosting = HoverTrackingHostingView(rootView: IslandView(
+            model: model, state: state, onToggle: { [weak self] in self?.toggle() })
             .contextMenu { WidgetMenu(model: model, actions: actions) })
         hosting.sizingOptions = []
         hosting.onHover = { [weak self] isInside in
-            self?.isHovering = isInside
+            // Arriving does nothing; only leaving matters, to close what a click opened.
+            guard !isInside, self?.isOpened == true else { return }
+            self?.isOpened = false
             self?.update()
         }
         panel.contentView = hosting
@@ -77,6 +82,11 @@ final class IslandController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.update() }
             .store(in: &observers)
+    }
+
+    private func toggle() {
+        isOpened.toggle()
+        update()
     }
 
     private func peekOpen() {
@@ -123,7 +133,7 @@ final class IslandController {
         let collapsedFrame = frame(for: metrics.collapsedSize, on: screen)
         shrink?.cancel()
 
-        if isHovering || isRinging || isPeeking {
+        if isOpened || isRinging || isPeeking {
             // Make room first, then let the island grow into it.
             panel.setFrame(expandedFrame, display: true)
             if !state.isExpanded {

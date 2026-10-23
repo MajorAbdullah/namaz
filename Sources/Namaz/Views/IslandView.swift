@@ -31,11 +31,12 @@ final class IslandState: ObservableObject {
 
 /// A black island at the top of the screen, in the manner of the iPhone's Dynamic Island: at
 /// rest it shows the next prayer and a countdown either side of the notch, and it opens into
-/// the day's timetable when pointed at, or when an alarm rings. While an unprayed prayer's time
+/// the day's timetable when clicked, or when an alarm rings. While an unprayed prayer's time
 /// runs out it shows that prayer instead, counting down to its deadline in the warning's colour.
 struct IslandView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var state: IslandState
+    var onToggle: () -> Void = {}
 
     var body: some View {
         // Start on a whole second so the countdown ticks in step with the clock.
@@ -47,6 +48,7 @@ struct IslandView: View {
                     prayed: model.prayed, now: model.time(for: timeline.date), timeZone: model.timeZone),
                 metrics: state.metrics,
                 isExpanded: state.isExpanded,
+                onToggle: onToggle,
                 onPrayed: { model.setPrayed(true, for: $0) },
                 onStop: { model.stopAlarm() })
         }
@@ -58,6 +60,7 @@ struct IslandContent: View {
     let content: CardContent
     let metrics: IslandMetrics
     let isExpanded: Bool
+    var onToggle: () -> Void = {}
     var onPrayed: (PrayerEvent) -> Void = { _ in }
     var onStop: () -> Void = {}
 
@@ -86,6 +89,9 @@ struct IslandContent: View {
         VStack(spacing: 0) {
             bar
                 .frame(height: metrics.barHeight)
+                // Empty space has no hit area of its own, and this strip is mostly that.
+                .contentShape(Rectangle())
+                .onTapGesture(perform: onToggle)
             if isExpanded {
                 details
                     .frame(width: metrics.expandedSize(ringing: isRinging).width)
