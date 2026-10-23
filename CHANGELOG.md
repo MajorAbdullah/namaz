@@ -2,6 +2,21 @@
 
 What changed in each version of Namaz, newest first.
 
+## 1.4.0 (23 October 2026)
+
+- **Namaz for Linux.** The same app now runs on Linux, from the system tray: the prayer times, the
+  adhan, **Prayed** marks, the end-of-time alerts and the screen cover, and the same settings.
+  Download `Namaz-1.4.0-linux-amd64.deb` (Debian, Ubuntu) or
+  `Namaz-1.4.0-linux-x86_64.AppImage` (any 64-bit distribution) from the release. The tray cannot
+  be clicked on every desktop, so the menu shows the next prayer instead. For the adhan, install
+  the GStreamer plugins (`gstreamer1.0-plugins-good`, and `gstreamer1.0-libav` for the recording
+  itself). On Wayland the island cannot be placed, and the way out of the screen cover is
+  **Ctrl+Alt+Q** inside it or its Quit button.
+- **The island opens when you click it (Mac).** It used to open as soon as the pointer touched it,
+  which happened every time you reached for the menu bar next to the notch. Now click it to open
+  it, and click it again or move the pointer away to close it. Alarms and end-of-time warnings
+  still open it by themselves. On Windows the island still opens when you point at it.
+
 ## 1.3.1 (14 October 2026)
 
 - **Much lighter on the battery and memory (Mac).** Namaz used about 15% of a processor core

@@ -60,7 +60,8 @@ open unverified apps. In that case only they can allow it.
 
 The same app for Windows 10 and later, in the system tray: the times, the adhan,
 **Prayed** marks, the end-of-time alerts and the screen cover, and the same settings. Differences
-from the Mac: Windows has no notch, so the island is a pill at the top of the screen; a tray icon
+from the Mac: Windows has no notch, so the island is a pill at the top of the screen, and it opens
+when you point at it rather than when you click it; a tray icon
 cannot show text, so what the Mac shows in the menu bar is in the icon's tooltip; and **Ctrl+Alt+Q**
 takes the place of ⌘Q as the way out of the screen cover.
 
@@ -106,8 +107,9 @@ without notifications the alarm still rings and still shows on screen.
 - **Menu bar item** showing the next prayer and its time. Click it for the full timetable, with a
   bell beside each prayer to turn its alarm on or off.
 - **Island** at the top of the screen, in the manner of the iPhone's Dynamic Island. At rest it
-  shows the next prayer and a countdown either side of the notch. Point at it and it opens into
-  the day's timetable. On a screen without a notch it is a pill under the menu bar.
+  shows the next prayer and a countdown either side of the notch. Click it and it opens into the
+  day's timetable; it closes when you click it again or move away. On a screen without a notch it
+  is a pill under the menu bar.
 - **Desktop card**, as an alternative to the island: the same information on a card you can drag
   anywhere, whose backdrop changes with the time of day. Right-click either one to switch.
 - **Alarms** at each prayer time: the adhan plays, the island opens with a Stop button (or a
