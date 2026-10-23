@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Namaz: not just another reminder app. Prayer times and the adhan for Mac and Windows</title>
-<meta name="description" content="Not just another reminder app. Namaz plays the adhan at each prayer, and as a prayer runs out it covers your screen until you have prayed. Free for Mac and Windows.">
+<title>Namaz: not just another reminder app. Prayer times and the adhan for Mac, Windows and Linux</title>
+<meta name="description" content="Not just another reminder app. Namaz plays the adhan at each prayer, and as a prayer runs out it covers your screen until you have prayed. Free for Mac, Windows and Linux.">
 <meta name="theme-color" content="#060a1f">
 <meta property="og:title" content="Namaz: not just another reminder app">
-<meta property="og:description" content="It plays the adhan, then holds you to it: as a prayer runs out, your screen asks you to pray. Free for Mac and Windows.">
+<meta property="og:description" content="It plays the adhan, then holds you to it: as a prayer runs out, your screen asks you to pray. Free for Mac, Windows and Linux.">
 <meta property="og:type" content="website">
 <link rel="icon" href="icon.png">
 <style>
@@ -146,6 +146,17 @@ h2 { margin: 0 0 12px; font: 600 clamp(28px, 4vw, 38px)/1.15 var(--serif); lette
 .more { margin-top: 22px; font-size: 15px; color: var(--muted); }
 .more a { color: var(--cream); }
 
+.dl code { font: 13.5px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--glow); overflow-wrap: anywhere; }
+
+/* ---- Changelog ---- */
+.changelog { max-width: 760px; }
+.release { padding: 24px 0 8px; border-top: 1px solid var(--line); }
+.release h3 { margin: 0 0 10px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; font: 600 22px/1.2 var(--serif); }
+.release time { font: 500 14px/1.2 var(--sans); color: var(--muted); }
+.release ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 15.5px; }
+.release li { margin: 0 0 12px; }
+.release li strong { color: var(--text); }
+
 /* ---- Help ---- */
 .help { max-width: 760px; }
 .steps { margin: 0 0 22px; padding: 0; list-style: none; counter-reset: step; }
@@ -207,6 +218,7 @@ footer .links { display: flex; gap: 20px; }
       <a class="brand" href="#top"><img src="icon.png" alt="" width="30" height="30">Namaz</a>
       <div class="links">
         <a href="#download">Download</a>
+        <a href="#changelog">Changelog</a>
         <a href="#help">Help</a>
         <a href="https://github.com/MajorAbdullah/namaz">GitHub</a>
       </div>
@@ -219,10 +231,10 @@ footer .links { display: flex; gap: 20px; }
     <p class="lede">Namaz plays the adhan at each prayer. Then it stays with you: as a prayer runs out, it covers your screen until you have prayed.</p>
     <div class="buttons">
       <a class="btn primary" id="hero-primary" href="#download">Download</a>
-      <a class="btn" id="hero-secondary" href="#download">Other platform</a>
+      <a class="btn" id="hero-secondary" href="#download">Other platforms</a>
     </div>
-    <p class="fine"><span id="version">Free and open source</span> · Mac and Windows</p>
-    <p id="phone-note">Namaz is for Mac and Windows computers. Open this page on your computer to download it.</p>
+    <p class="fine"><span id="version">Free and open source</span> · Mac, Windows and Linux</p>
+    <p id="phone-note">Namaz is for Mac, Windows and Linux computers. Open this page on your computer to download it.</p>
   </div>
 </header>
 
@@ -239,7 +251,7 @@ footer .links { display: flex; gap: 20px; }
 
   <section id="see">
     <h2>Always there, until it matters</h2>
-    <p class="sub">Next to the notch or in the tray, a small island shows the next prayer and the time left. Point at it for the whole day.</p>
+    <p class="sub">Next to the notch or in the tray, a small island shows the next prayer and the time left. Open it for the whole day.</p>
     <div class="see">
       <img class="island" src="island.png" alt="The island open, showing Dhuhr ending in 13 minutes in amber, with a Prayed button and the day's times" width="400" height="164">
       <img class="card" src="card.png" alt="The desktop card at dusk showing the next prayer, a countdown and the day's six times" width="364" height="224">
@@ -296,8 +308,48 @@ footer .links { display: flex; gap: 20px; }
           <li>Open Namaz from the Start menu and look for its icon by the clock.</li>
         </ol>
       </div>
+      <div class="dl" id="dl-linux">
+        <h3>For Linux</h3>
+        <p class="meta">64-bit (x86_64) · Ubuntu 22.04 or later, or similar<br><span id="linux-file">AppImage (.AppImage)</span></p>
+        <a class="btn primary" id="linux-link" href="https://github.com/MajorAbdullah/namaz/releases/latest"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11.2l4.1-4.1 1.4 1.4L12 17 6.5 11.5l1.4-1.4L12 14.2V3zM5 19h14v2H5z"/></svg>Download for Linux</a>
+        <ol>
+          <li>Make the file runnable, then open it: <code>chmod +x Namaz-*.AppImage</code></li>
+          <li>On Debian or Ubuntu you can instead install the <a id="linux-deb-link" href="https://github.com/MajorAbdullah/namaz/releases/latest">.deb package</a>: <code>sudo apt install ./Namaz-*.deb</code></li>
+          <li>Look for Namaz's icon in the system tray. For the adhan to play, install <code>gstreamer1.0-plugins-good</code> and <code>gstreamer1.0-libav</code>.</li>
+        </ol>
+      </div>
     </div>
     <p class="more">Older versions and release notes are on <a href="https://github.com/MajorAbdullah/namaz/releases">GitHub</a>.</p>
+  </section>
+
+  <section id="changelog" class="changelog">
+    <h2>What's new</h2>
+    <p class="sub">The latest versions, newest first.</p>
+
+    <article class="release">
+      <h3>1.4.0 <time datetime="2026-10-23">23 October 2026</time></h3>
+      <ul>
+        <li><strong>Namaz for Linux.</strong> The same app now runs on Linux, from the system tray: the prayer times, the adhan, <strong>Prayed</strong> marks, the end-of-time alerts and the screen cover, and the same settings. Get the .deb (Debian, Ubuntu) or the AppImage (any 64-bit distribution) from the download section. The tray cannot be clicked on every desktop, so the menu shows the next prayer instead. On Wayland the island cannot be placed, and the way out of the screen cover is <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Q</kbd> inside it or its Quit button.</li>
+        <li><strong>The island opens when you click it (Mac).</strong> It used to open as soon as the pointer touched it, which happened every time you reached for the menu bar next to the notch. Now click it to open it, and click it again or move the pointer away to close it. Alarms and end-of-time warnings still open it by themselves. On Windows the island still opens when you point at it.</li>
+      </ul>
+    </article>
+
+    <article class="release">
+      <h3>1.3.1 <time datetime="2026-10-14">14 October 2026</time></h3>
+      <ul>
+        <li><strong>Much lighter on the battery and memory (Mac).</strong> Namaz used about 15% of a processor core while doing nothing, and its memory grew by roughly 2 MB every second until the app was quit. The cause was the rolling animation on the countdown digits, which ran every second. The countdown now simply changes. At rest the app uses under 1% of a core and stays at about 24 MB.</li>
+      </ul>
+    </article>
+
+    <article class="release">
+      <h3>1.3.0 <time datetime="2026-10-08">8 October 2026</time></h3>
+      <ul>
+        <li><strong>Namaz for Windows.</strong> The same app now runs on Windows 10 and later, from the system tray: the prayer times, the adhan, <strong>Prayed</strong> marks, the end-of-time alerts and the screen cover, and the same settings. Windows has no notch, so the island is a pill at the top of the screen; a tray icon cannot show text, so what the Mac shows in the menu bar is in the icon's tooltip; and <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Q</kbd> takes the place of <kbd>⌘</kbd> <kbd>Q</kbd> as the way out of the screen cover.</li>
+        <li>The Mac app is unchanged.</li>
+      </ul>
+    </article>
+
+    <p class="more">Every version, back to 1.0, is in the <a href="https://github.com/MajorAbdullah/namaz/blob/main/CHANGELOG.md">full changelog</a>.</p>
   </section>
 
   <section id="help" class="help">
@@ -391,13 +443,12 @@ footer .links { display: flex; gap: 20px; }
   var agent = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
   var ua = navigator.userAgent || "";
   var isPhone = /Android|iPhone|iPad|iPod/i.test(ua);
-  var os = /Win/i.test(agent + ua) ? "win" : "mac";
+  var os = /Win/i.test(agent + ua) ? "win" : (!isPhone && /Linux|X11/i.test(agent + ua)) ? "linux" : "mac";
   var primary = $("hero-primary"), secondary = $("hero-secondary");
-  var names = { mac: "Download for Mac", win: "Download for Windows" };
-  var other = os === "mac" ? "win" : "mac";
+  var names = { mac: "Download for Mac", win: "Download for Windows", linux: "Download for Linux" };
   primary.textContent = names[os];
-  secondary.textContent = os === "mac" ? "Windows version" : "Mac version";
-  primary.href = "#dl-" + os; secondary.href = "#dl-" + other;
+  secondary.textContent = "Other platforms";
+  primary.href = "#dl-" + os; secondary.href = "#download";
   if (!isPhone) $("dl-" + os).classList.add("is-yours");
   if (isPhone) { $("phone-note").style.display = "block"; }
 
@@ -410,12 +461,14 @@ footer .links { display: flex; gap: 20px; }
     .then(function (release) {
       var assets = release.assets || [];
       function find(re) { return assets.filter(function (a) { return re.test(a.name); })[0]; }
-      var mac = find(/\.dmg$/i), win = find(/windows-setup\.exe$/i);
+      var mac = find(/\.dmg$/i), win = find(/windows-setup\.exe$/i), linux = find(/\.AppImage$/i), deb = find(/\.deb$/i);
       var version = String(release.tag_name || "").replace(/^v/, "");
       if (version) $("version").textContent = "Version " + version + " · Free and open source";
       if (mac) { $("mac-link").href = mac.browser_download_url; $("mac-file").textContent = mac.name + " · " + size(mac.size); }
       if (win) { $("win-link").href = win.browser_download_url; $("win-file").textContent = win.name + " · " + size(win.size); }
-      var mine = os === "mac" ? mac : win;
+      if (linux) { $("linux-link").href = linux.browser_download_url; $("linux-file").textContent = linux.name + " · " + size(linux.size); }
+      if (deb) { $("linux-deb-link").href = deb.browser_download_url; }
+      var mine = { mac: mac, win: win, linux: linux }[os];
       if (mine) { primary.href = mine.browser_download_url; }
     })
     .catch(function () { /* the links already point at the releases page */ });

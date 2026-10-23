@@ -180,7 +180,9 @@ it to `UIDump.swift` so it is covered too.
 1. Set the new version in `Resources/Info.plist` (`CFBundleShortVersionString`, and raise
    `CFBundleVersion` by one), then run `npm run sync-version` in `windows/` so the Windows
    files agree with it.
-2. Add an entry at the top of `CHANGELOG.md`, written for people who use the app.
+2. Add an entry at the top of `CHANGELOG.md`, written for people who use the app, and the same
+   entry at the top of the changelog section of the website (`docs/index.html`). The website's
+   download buttons need no change: they read the newest release from GitHub.
 3. Run `make test`, then `make dist` to build `build/Namaz-<version>.dmg`.
 4. Commit, push, and publish a GitHub release tagged `v<version>` with the disk image attached
    and the changelog entry as its notes. Attach the Windows installer from the Windows
